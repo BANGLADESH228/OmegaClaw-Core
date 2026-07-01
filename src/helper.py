@@ -78,73 +78,56 @@ def _get_command_name(line):
         return ""
     return normalized.split(maxsplit=1)[0]
 
+def quote_arg(x):
+    return json.dumps(x, ensure_ascii=False)
 
-def _is_known_command(line):
-    return _get_command_name(line) in LLM_COMMANDS
+def starts_command_line(line):
+    s = line.lstrip()
+    if not s:
+        return False
+    # allow "(send ...)" as command start too
+    if s.startswith("("):
+        s = s[1:].lstrip()
+    if not s:
+        return False
+    first = s.split(maxsplit=1)[0].rstrip(")")
+    return first in LLM_COMMANDS
 
 
-def _decode_quoted_arg(text):
-    try:
-        return json.loads(text)
-    except Exception:
-        return None
-
-
-def _merge_send_continuations(lines):
-    merged = []
-    idx = 0
-    while idx < len(lines):
-        line = lines[idx]
-        if _get_command_name(line) != "send":
-            merged.append(line)
-            idx += 1
+def split_command_blocks(s):
+    blocks = []
+    cur = []
+    for raw in s.splitlines():
+        if not raw.strip():
+            if cur:
+                cur.append(raw)
             continue
-
-        send_wrapped = line.strip().startswith("(")
-        head = line.strip()
-        while head.startswith("("):
-            head = head[1:].lstrip()
-        parts = head.split(maxsplit=1)
-        payload = parts[1].strip() if len(parts) > 1 else ""
-        decoded_payload = _decode_quoted_arg(payload) if payload.startswith('"') else None
-        text = decoded_payload if decoded_payload is not None else payload
-
-        idx += 1
-        continuations = []
-        while idx < len(lines) and not _is_known_command(lines[idx]):
-            continuation = lines[idx].strip()
-            if send_wrapped and continuation.endswith(")"):
-                continuation = continuation[:-1].rstrip()
-                continuations.append(continuation)
-                idx += 1
-                break
-            continuations.append(continuation)
-            idx += 1
-
-        if continuations:
-            if text:
-                text = text + "\n" + "\n".join(continuations)
-            else:
-                text = "\n".join(continuations)
-            merged.append(f"send {json.dumps(text, ensure_ascii=False)}")
+        if starts_command_line(raw) and cur:
+            blocks.append("\n".join(cur).strip())
+            cur = [raw]
         else:
-            merged.append(line)
-    return merged
-
+            cur.append(raw)
+    if cur:
+        blocks.append("\n".join(cur).strip())
+    return blocks
 
 def balance_parentheses(s):
     s = s.replace("_quote_", '"').replace("_newline_", "\n")
     sexprs = []
     special_two_arg_cmds = {"write-file", "append-file"}
-    lines = [line.strip() for line in s.splitlines() if line.strip()]
-    lines = _merge_send_continuations(lines)
-    for line in lines:
+    for line in split_command_blocks(s):
+        line = line.strip()
+        if not line:
+            continue
         if line.startswith("(-"):
             line = "(pin -" + line[2:]
         elif line.startswith("-"):
             line = "pin " + line
         # remove one outer (...) if present
-        line = _strip_outer_parens(line)
+        if line.startswith("(") and line.endswith(")"):
+            line = line[1:-1].strip()
+        elif line.startswith("("):
+            line = line[1:].strip()
         parts = line.split(maxsplit=1)
         if not parts:
             continue
@@ -170,27 +153,25 @@ def balance_parentheses(s):
                     filename = rest[:end+1]
                     content = rest[end+1:].strip()
                 else:
-                    filename = '"' + rest[1:].replace('"', '\\"') + '"'
+                    filename = quote_arg(rest[1:])
                     content = ""
             else:
                 split_rest = rest.split(maxsplit=1)
-                filename = '"' + split_rest[0].replace('"', '\\"') + '"'
+                filename = quote_arg(split_rest[0])
                 content = split_rest[1].strip() if len(split_rest) > 1 else ""
             if content:
-                if content.startswith('"') and content.endswith('"'):
+                if content.startswith('"') and content.endswith('"') and "\n" not in content:
                     sexprs.append(f"({cmd} {filename} {content})")
                 else:
-                    content = content.replace('"', '\\"')
-                    sexprs.append(f'({cmd} {filename} "{content}")')
+                    sexprs.append(f"({cmd} {filename} {quote_arg(content)})")
             else:
                 sexprs.append(f"({cmd} {filename})")
             continue
         if rest:
-            if rest.startswith('"') and rest.endswith('"'):
+            if rest.startswith('"') and rest.endswith('"') and "\n" not in rest:
                 sexprs.append(f"({cmd} {rest})")
             else:
-                rest = rest.replace('"', '\\"')
-                sexprs.append(f'({cmd} "{rest}")')
+                sexprs.append(f"({cmd} {quote_arg(rest)})")
         else:
             sexprs.append(f"({cmd})")
     ret = " ".join(sexprs)
