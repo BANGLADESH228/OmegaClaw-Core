@@ -20,7 +20,6 @@ LLM_COMMANDS = {
     "write-file",
 }
 
-
 def extract_timestamp(line):
     m = TS_RE.search(line)
     if not m:
@@ -29,7 +28,6 @@ def extract_timestamp(line):
         return datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
     except ValueError:
         return None
-
 
 def around_time(needle_time_str, k):
     needle_time_str = needle_time_str.replace(r'\"', '').replace('"', '').strip()
@@ -61,7 +59,6 @@ def around_time(needle_time_str, k):
         ret += f"{lineno}:{line}"
     return ret
 
-
 def _strip_outer_parens(line):
     if line.startswith("(") and line.endswith(")"):
         return line[1:-1].strip()
@@ -81,7 +78,6 @@ def starts_command_line(line):
         return False
     first = s.split(maxsplit=1)[0].rstrip(")")
     return first in LLM_COMMANDS
-
 
 def split_command_blocks(s):
     blocks = []
@@ -166,7 +162,6 @@ def balance_parentheses(s):
     ret = " ".join(sexprs)
     return "(" + ret + ")"
 
-
 def normalize_string(x):
     try:
         if isinstance(x, bytes):
@@ -174,7 +169,6 @@ def normalize_string(x):
         return str(x).encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
     except Exception:
         return str(x)
-
 
 def test_balance_parenthesis():
     assert balance_parentheses('(write-file test.txt hello world)') == '((write-file "test.txt" "hello world"))'
@@ -199,7 +193,6 @@ def test_balance_parenthesis():
     assert balance_parentheses('') == '()'
     assert balance_parentheses('   ') == '()'
     assert balance_parentheses('()\nsend hello') == '((send "hello"))'
-
 
 if __name__ == "__main__":
     test_balance_parenthesis()
