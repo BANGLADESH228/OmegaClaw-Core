@@ -67,17 +67,6 @@ def _strip_outer_parens(line):
         return line[1:-1].strip()
     return line
 
-
-def _get_command_name(line):
-    normalized = line.strip()
-    while normalized.startswith("("):
-        normalized = normalized[1:].lstrip()
-    while normalized.endswith(")"):
-        normalized = normalized[:-1].rstrip()
-    if not normalized:
-        return ""
-    return normalized.split(maxsplit=1)[0]
-
 def quote_arg(x):
     return json.dumps(x, ensure_ascii=False)
 
