@@ -36,6 +36,7 @@
 
 (= (getContext)
    (string-safe (py-str ("PROMPT: " (getPrompt (provider)) " SKILLS: " (getSkills)
+                         (newline) (getPromptExtensions) (newline)
                          " OUTPUT_FORMAT: Up to 5 lines, do not wrap quotes around args, do not use variables:" (newline)
                          " toolName1 arg1" (newline)
                          " toolName2 arg2" (newline)
@@ -46,6 +47,12 @@
                          " LAST_SKILL_USE_RESULTS: you must rectify ALERT_FAILED skill use cases " (last_chars (get-state &lastresults) (maxFeedback)) 
                          " HISTORY: " (getHistory) 
                          " TIME: " (get_time_as_string)))))
+
+(= (getPromptExtensions)
+   (join (newline) (collapse (prompt-extension $_))))
+
+; dynamic prompt extension placeholder to eliminate error when no extension is added
+(= (prompt-extension placeholder) (empty))
 
 (= (HandleError $msg $cmd $sexpr)
    (case $sexpr (((Error $a $b) (let $new (append (get-state &error) (($msg $cmd)))

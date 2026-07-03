@@ -70,3 +70,17 @@
 
 (= (command-line)
    (collapse (argv $_)))
+
+(= (join $sep $strings)
+   (if (== $strings ())
+     ""
+     (let* (($head (car-atom $strings))
+            ($tail (cdr-atom $strings)))
+       (join $sep $tail $head))))
+
+(= (join $sep $strings $prefix)
+   (if (== $strings ())
+     $prefix
+     (let* (($head (car-atom $strings))
+            ($tail (cdr-atom $strings)))
+       (join $sep $tail (string_concat (string_concat $prefix $sep) $head)))))

@@ -1,4 +1,11 @@
 (= (getSkills)
+   (let $static (getStaticSkills)
+     (collapse (superpose ((superpose $static) (dynamic-skill $_))))))
+
+; dynamic skill placeholder to eliminate error when no dynamic skill is added
+(= (dynamic-skill placeholder) (empty))
+
+(= (getStaticSkills)
    (;INTERNAL:
     "- Remember a particular string such as skills and memories: remember string"
     "- Query long-term embedding memory for skills and memories with short phrases only: query string"
@@ -27,6 +34,7 @@
     "metta (|~ ((Implication (Inheritance $1 (IntSet Feathered))"
     "           (Inheritance $1 Bird)) (stv 1.0 0.9))"
     "          ((Inheritance Pingu (IntSet Feathered)) (stv 1.0 0.9)))"))
+    ; FIXME: add load-plugin/unload-plugin skills
 
 
 (= (read-file $file)
