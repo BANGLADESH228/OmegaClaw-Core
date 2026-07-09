@@ -1,0 +1,88 @@
+name: autotests
+
+on:
+  workflow_call:
+    inputs:
+      no_build_cache:
+        description: 'Do not use cached docker layers on image build'
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      CICD_GITHUB_PAT:
+        required: false
+
+jobs:
+  autotests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            platform_suffix: amd64
+          - platform: linux/arm64
+            platform_suffix: arm64
+    env:
+      AUTOTESTS_OMEGACLAW_CONTAINER: omegaclaw
+      AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}-${{ matrix.platform_suffix }}'
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v7
+        with:
+          platforms: ${{ matrix.platform }}
+          load: true
+          push: false
+          tags: singularitynet/omegaclaw:${{ env.AUTOTESTS_OMEGACLAW_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=min
+          no-cache: ${{ inputs.no_build_cache }}
+
+      - name: Autotests - Checkout
+        uses: actions/checkout@v4
+
+      - name: Autotests - Set up
+        run: |
+          chmod +x ./scripts/omegaclaw
+          ./scripts/omegaclaw start -p Test -t test -d singularitynet/omegaclaw:${{ env.AUTOTESTS_OMEGACLAW_TAG }}
+          pip install pytest
+          echo "Waiting for agent to become ready..."
+          ready=
+          for i in $(seq 1 90); do
+            if docker logs omegaclaw 2>&1 | grep -qE "CHARS_SENT: [0-9]+"; then
+              echo "Agent ready after ${i}s"
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ -z "$ready" ]; then
+            echo "::error::Agent did not become ready in 90s"
+            docker logs omegaclaw 2>&1 | tail -100
+            exit 1
+          fi
+        env:
+          TEST_SERVER_IP: 'host.docker.internal'
+          IMPORT_KB_ON_START: '0' # TODO: this is turned off because Python dependencies are not installed to the workflow environment
+
+      - name: Autotests - Phase 1 (Blocking Checks)
+        working-directory: Autotests
+        run: |
+          python ../src/helper.py
+          pytest -s -v @run_mandatory
+        env:
+          OMEGACLAW_CONTAINER: ${{ env.AUTOTESTS_OMEGACLAW_CONTAINER }}
+
+      - name: Autotests - Phase 2 (Non-Blocking Checks)
+        continue-on-error: true
+        working-directory: Autotests
+        run: pytest -s -v @run_optional
+        env:
+          OMEGACLAW_CONTAINER: ${{ env.AUTOTESTS_OMEGACLAW_CONTAINER }}
+          OMEGACLAW_GIT_TOKEN: ${{ secrets.CICD_GITHUB_PAT }}
