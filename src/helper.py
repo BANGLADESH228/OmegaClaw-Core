@@ -26,7 +26,8 @@ LLM_COMMANDS = {
     "tavily-search",
     "technical-analysis",
     "write-file",
-    "get-io-policy"
+    "get-io-policy",
+    "write-file-b64",
 }
 
 
@@ -146,7 +147,7 @@ def _merge_send_continuations(lines):
 def balance_parentheses(s):
     s = s.replace("_quote_", '"').replace("_newline_", "\n")
     sexprs = []
-    special_two_arg_cmds = {"write-file", "append-file"}
+    special_two_arg_cmds = {"write-file", "append-file", "write-file-b64"}
     lines = [line.strip() for line in s.splitlines() if line.strip()]
     lines = _merge_send_continuations(lines)
     for line in lines:
@@ -226,6 +227,8 @@ def projectRootDirectory():
 def test_balance_parenthesis():
     assert balance_parentheses('(write-file test.txt hello world)') == '((write-file "test.txt" "hello world"))'
     assert balance_parentheses('(append-file test.txt hello world)') == '((append-file "test.txt" "hello world"))'
+    assert balance_parentheses('(write-file-b64 test.txt aGVsbG8=)') == '((write-file-b64 "test.txt" "aGVsbG8="))'
+    assert balance_parentheses('write-file-b64 test.txt aGVsbG8=') == '((write-file-b64 "test.txt" "aGVsbG8="))'
     assert balance_parentheses('(write-file "test.txt" hello world)') == '((write-file "test.txt" "hello world"))'
     assert balance_parentheses('(write-file "test.txt" "hello world")') == '((write-file "test.txt" "hello world"))'
     assert balance_parentheses('(write-file test.txt "hello world")') == '((write-file "test.txt" "hello world"))'
