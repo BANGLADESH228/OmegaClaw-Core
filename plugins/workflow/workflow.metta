@@ -1,27 +1,30 @@
 !(import! &self (library lib_spaces))
-!(import! &self (library OmegaClaw-Core src/pluginapi))
-!(import! &self ./utils)
-!(import! &self ./utils.py)
+;!(import! &self utils.py)
 
 (= (loadOmegaClawPlugin)
    (progn
        (add-skill workflow-list-available "List available workflows" ())
        (add-skill workflow-load-instructions "Load an existing workflow instructions into the active context" (workflow_name_in_quotes))
-       (add-skill workflow-unload-instructions "Unload active workflow from the active context" ())))
+       (add-skill workflow-unload-instructions "Unload active workflow from the active context" ())
+       ))
 
-;; ============ WORKFLOW LOADER ============
+; ============ WORKFLOW LOADER ============
 
 (= (get-existing-dir $paths)
     (let $dir $paths
-       (if (safe_exists_directory $dir)
+       (if (exists-directory $dir)
            $dir
            (empty)))
 )
 ;; Validate name
-(= (valid-file-or-folder-name $filename)
-   (if (== (py-str ("valid")) (py-call (utils.validate_file_or_folder_name(py-str ($filename)))))
-       True
-       False))
+; TODO: calling Python validation code is replaced by stub.
+; Can be returned back when https://github.com/trueagi-io/PeTTa/issues/196 is
+; fixed.
+(= (valid-file-or-folder-name $filename) True)
+;(= (valid-file-or-folder-name $filename)
+;   (if (== (py-str ("valid")) (py-call (utils.validate_file_or_folder_name(py-str ($filename)))))
+;       True
+;       False))
 
 ; FIXME: replace (instructionsDir) result by plugin parameter to allow user
 ; configure the location of the workflows collection
@@ -84,6 +87,35 @@
               ($first (car-atom $dirs))
               ($path  (py-str ($base "/" $first "/description.txt")))
               ($rest (collect-description $tail $base)))
-         (if (safe_exists_file $path)
+         (if (exist-file $path)
              (cons-atom (py-str ($first ": " (read-file $path))) $rest)
             $rest))))
+
+( = (directory-files $dir)
+   (progn (translatePredicate (directory_files $dir $files))
+          $files)
+)
+
+( = (directory-dirs $dir)
+  (let $f (directory-files $dir)
+       (filter-dirs  $f $dir)
+   )
+)
+
+(= (filter-dirs $files $dir)
+   (if (== $files ())
+       ()
+       (progn (translatePredicate (atom_string (car-atom $files) $first))
+               (let* (
+                      ($tail     (cdr-atom $files))
+                      ($fullpath (py-str ($dir "/" $first)))
+                      ($rest     (filter-dirs $tail $dir)))
+                         (if (or (== $first ".") (== $first ".."))
+                             $rest
+                             (if (exists-directory $fullpath)
+                                 (cons-atom $first $rest)
+                                 $rest))
+                 )
+        )
+    )
+)
