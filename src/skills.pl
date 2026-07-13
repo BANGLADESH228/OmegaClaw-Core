@@ -54,3 +54,13 @@ read_file_tail(Path, MaxChars, Text) :-
         ),
         close(In)
     ).
+
+%Newline needed to start a new line at the end of Path, empty if already at one:
+line_separator(Path, Sep) :-
+    (   exists_file(Path),
+        read_file_tail(Path, 1, Tail),
+        Tail \== "",
+        Tail \== "\n"
+    ->  Sep = "\n"
+    ;   Sep = ""
+    ).

@@ -45,12 +45,14 @@
           WRITE-FILE-SUCCESS))
 
 (= (append-file $file $str)
-   (progn (translatePredicate (exists_file $file))
-          (translatePredicate (open $file append $Out))
-          (translatePredicate (write $Out $str))
-          (translatePredicate (nl $Out)),
-          (translatePredicate (close $Out))
-          APPEND-FILE-SUCCESS))
+   (let $sep (line_separator $file)
+        (progn (translatePredicate (exists_file $file))
+               (translatePredicate (open $file append $Out))
+               (translatePredicate (write $Out $sep))
+               (translatePredicate (write $Out $str))
+               (translatePredicate (nl $Out))
+               (translatePredicate (close $Out))
+               APPEND-FILE-SUCCESS)))
 
 (= (tavily-search $query)
    (py-call (agentverse.tavily_search $query)))
@@ -64,7 +66,7 @@
 (= (get-io-policy)
    (py-call (policy.get_allowed_policy_paths (securityPolicyPath))))
 
-!(import_prolog_functions_from_file (library OmegaClaw-Core ./src/skills.pl) (shell first_char gc read_file_tail))
+!(import_prolog_functions_from_file (library OmegaClaw-Core ./src/skills.pl) (shell first_char gc read_file_tail line_separator))
 
 (= (metta $str)
    (let $code (sread $str)
