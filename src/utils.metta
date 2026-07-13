@@ -7,15 +7,27 @@
 !(import_prolog_function swrite)
 !(import_prolog_function sread)
 !(import_prolog_function string_concat)
+!(import_prolog_function make_directory)
 
 (= (sleep $t)
    (progn (translatePredicate (sleep $t))
           True))
 
-(= (exists-file $file)
-   (case (translatePredicate (exists_file $file))
-     (($_ True)
-      (Empty False))))
+(: empty-to-bool (-> Expression Bool))
+(= (empty-to-bool $predicate)
+   (case (eval $predicate)
+     ((Empty False)
+      ($r $r))))
+
+(= (exists-file $path)
+   (empty-to-bool (translatePredicate (exists_file $path))))
+
+(= (exists-directory $path)
+   (empty-to-bool (translatePredicate (exists_directory $path))))
+
+(= (make-directory $path)
+  (let $rc (catch (((translatePredicate (make_directory $path)))))
+    (return-on-error $rc True)))
 
 (= (string-replace $str $a $b)
    (atomic_list_concat (split_string $str $a "") $b))
@@ -84,3 +96,13 @@
      (let* (($head (car-atom $strings))
             ($tail (cdr-atom $strings)))
        (join $sep $tail (string_concat (string_concat $prefix $sep) $head)))))
+
+(= (strings-concat $strings)
+   (join "" $strings))
+
+(= (atom-concat $a $b)
+   (atomic_list_concat ($a $b)))
+
+(= (atom-string $atom $str)
+   (empty-to-bool (translatePredicate (atom_string $atom $str))))
+

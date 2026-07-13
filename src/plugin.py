@@ -14,6 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_LOADERS = ["python", "metta"]
 _REPO = pathlib.Path(__file__).parent.parent.resolve()
 _plugins = {}
 _commchannel: pluginapi.CommChannel = None
@@ -24,34 +25,40 @@ def _error(func, text):
     logger.error(error)
     raise RuntimeError(error)
 
-def initPlugins():
+def listPlugins():
     """Loads the list of the plugins from ./config/plugins.yaml file and then
-    loads each plugin from the list using the specified loader. YAML file
+    returns list of triples (loader, name, location). YAML file
     contains the list of plugins each specified by three fields:
     - name - required, must be unique
     - loader - required, must be either "python" or "metta"
     - location - optional, path to the plugin module used by Python loader"""
-    global _plugins, _REPO
+    global _plugins, _REPO, _LOADERS
 
-    plugins_path = _REPO.joinpath("./config/plugins.yaml")
-    with open(plugins_path, "r") as f:
-        plugins = yaml.safe_load(f)
+    config_path = _REPO.joinpath("./config/plugins.yaml")
+    with open(config_path, "r") as f:
+        yaml_content = yaml.safe_load(f)
 
-    for i, p in enumerate(plugins):
-
+    plugins = []
+    for i, p in enumerate(yaml_content):
         name = p.get("name")
         if name is None:
-            _error("initPlugins", f"name field is empty, file: {plugins_path}, index: {i}")
+            _error("listPlugins", f"name field is empty, file: {config_path}, index: {i}")
         if name in _plugins:
-            _error("initPlugins", f"name '{name}' is not unique")
+            _error("listPlugins", f"name '{name}' is not unique")
 
         loader = p.get("loader", "metta")
-        if loader == "python":
-            _initPythonPlugin(p)
-        elif loader == "metta":
-            _initMettaPlugin(p)
+        if not loader in _LOADERS:
+            _error("listPlugins", f"incorrect loader type '{loader}', only {_LOADERS} are supported")
+
+        location = p.get("location")
+        if location is not None:
+            location = str(pathlib.Path(location.format(REPO=_REPO)).resolve())
         else:
-            _error("initPlugins", f"loader '{loader}' is not implemented")
+            location = ""
+
+        plugins.append([loader, name, location])
+
+    return plugins
 
 class PythonPlugin:
     """Class to wrap the reference to the Python module and keep it inside
@@ -60,7 +67,7 @@ class PythonPlugin:
     def __init__(self, mod):
         self.mod = mod
 
-def _initPythonPlugin(plugin):
+def loadPythonPlugin(name, location):
     """Python plugin loader implementation. If location of the plugin is
     specified it imports "<location>/<name>.py" file. Imports <name> Python
     module otherwise. Calls "loadOmegaClawPlugin" function from the imported
@@ -68,10 +75,8 @@ def _initPythonPlugin(plugin):
     register appropriate callbacks."""
     global _plugins, _REPO
 
-    name = plugin.get("name")
-    location = plugin.get("location")
     mod = None
-    if location is None:
+    if not location:
         logger.info(f"_initPythonPlugin: loading {name} plugin from PYTHONPATH using Python module loader")
         mod = importlib.import_module(name)
     else:
@@ -94,9 +99,6 @@ def _initPythonPlugin(plugin):
         _error("_initPythonPlugin", f"No loadOmegaClawPlugin() function is implemented by plugin {name}")
     plugin_loader = getattr(mod, "loadOmegaClawPlugin")
     plugin_loader()
-
-def _initMettaPlugin(plugin):
-    raise NotImplementedError()
 
 def commandLineToDict(list):
     """Converts list of <key>=<value> pairs into Python dictionary. If
