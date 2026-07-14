@@ -4,7 +4,7 @@
 
 (= (initPlugins)
    (progn
-       (collapse (loadPlugins (py-call (plugin.listPlugins))))
+       (loadPlugins (py-call (plugin.listPlugins)))
        ()))
 
 (= (commChannelConfig $commchannel)
@@ -25,11 +25,7 @@
 ; Plugin loader
 
 (= (loadPlugins $list)
-   (let* (($head (car-atom $list))
-          ($tail (cdr-atom $list)))
-     (progn
-       (loadPlugin $head)
-       (loadPlugins $tail))))
+   (map-atom $list $plugin (loadPlugin $plugin)))
 
 (= (loadPlugin (python $name $location))
    (py-call (plugin.loadPythonPlugin $name $location)))
@@ -39,17 +35,27 @@
        (loadMettaPlugin $name $locationstr)))
 
 (= (loadMettaPlugin $name $location)
-   (if (== $location "")
-     (log ERROR "plugin" (strings-concat ("Plugin " $name " no location specified")))
-     (progn
-       (let $path (join "/" ($location $name)) ())
-       (let $space (atom-concat & $name) ())
-       (log INFO "plugin" (strings-concat ("Loading MeTTa plugin " $name " from " $path ".metta")))
-       (if (empty-to-bool (import! $space $path))
+   (let $rc1
+       (if (== $location "")
+         (Error (_loadMettaPlugin $name $location) (strings-concat ("Location is empty")))
          (progn
-           ; FIXME: pass configuration to the plugin initialization function
-           ; FIXME: fail if loadOmegaClawPlugin returns Error
-           (eval (loadOmegaClawPlugin))
-           (match $space (= (loadOmegaClawPlugin) $body) (remove-atom $space (= (loadOmegaClawPlugin) $body)))
-           (log INFO "plugin" (strings-concat ("Plugin " $name " is loaded"))))
-         (log ERROR "plugin" (strings-concat ("Plugin " $name " loading failed")))))))
+           (let $path (joinPath ($location $name)) ())
+           (let $space (atom-concat & (atom-concat plugin- $name)) ())
+           (log INFO "plugin" (strings-concat ("Loading MeTTa plugin " $name " from " $path ".metta")))
+             (if (== () (collapse (import! $space $path)))
+               (Error (_loadMettaPlugin $name $location) (strings-concat ("Cannot import " $name " plugin from " $path)))
+               (progn
+                 (let $rcs (collapse (eval (loadOmegaClawPlugin))) ())
+                 (match $space (= (loadOmegaClawPlugin) $body) (remove-atom $space (= (loadOmegaClawPlugin) $body)))
+                 (let $agg (|-> ($acc $next) (if (== $acc ()) (if (== Error (car-atom $next)) $next ()) ()))
+                   (let $rc (foldl-atom $rcs () $agg) ()))
+                 $rc))))
+       (progn
+         (if (= $rc1 (cons Error (cons $_ $error)))
+             (progn
+               (log ERROR "plugin" $error)
+               (log ERROR "plugin" (strings-concat ("Plugin " $name " loading failed")))
+               $rc1)
+             (progn
+               (log INFO "plugin" (strings-concat ("Plugin " $name " is loaded")))
+               ())))))

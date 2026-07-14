@@ -17,7 +17,7 @@
 (= (empty-to-bool $predicate)
    (case (eval $predicate)
      ((Empty False)
-      ($r $r))))
+      (True True))))
 
 (= (exists-file $path)
    (empty-to-bool (translatePredicate (exists_file $path))))
@@ -106,3 +106,10 @@
 (= (atom-string $atom $str)
    (empty-to-bool (translatePredicate (atom_string $atom $str))))
 
+(= (projectRootDirectory)
+   (py-call (helper.projectRootDirectory)))
+
+(= (joinPath $parts)
+   (progn
+     (let $path (py-call (helper.joinPath $parts)) ())
+     (let True (atom-string $path $pathstr) $pathstr)))

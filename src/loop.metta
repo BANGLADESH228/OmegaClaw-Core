@@ -6,7 +6,6 @@
 (= (maxOutputToken) (empty))
 (= (reasoningMode) (empty))
 (= (wakeupInterval) (empty))
-(= (logConfigPath) (empty))
 (= (memoryDirectory) (empty))
 (= (spamShield) (empty)) ; TODO: this parameter is considered deprecated
 
@@ -20,12 +19,10 @@
           (configure maxOutputToken 6000)
           (configure reasoningMode medium)
           (configure wakeupInterval 600) ;600=10 minutes
-          (configure logConfigPath "")
           (configure memoryDirectory ./)
           (change-state! &prevmsg "")
           (change-state! &lastresults "")
           (change-state! &loops (maxNewInputLoops))
-          (py-call (logger.setup_logging (logConfigPath)))
           ))
 
 (= (initKnowledge)
@@ -63,6 +60,7 @@
    (omegaclaw 1))
 (= (omegaclaw $k)
    (progn (if (== $k 1) (progn (initLoop)
+                               (initLogger)
                                (applySecurityPolicy)
                                (initMemory)
                                (initKnowledge)
