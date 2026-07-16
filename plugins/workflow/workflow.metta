@@ -1,38 +1,51 @@
 !(import! &self (library lib_spaces))
-;!(import! &self utils.py)
+
+(= (pluginWorkflowInstructionsDir) (empty))
 
 (= (loadOmegaClawPlugin)
    (progn
-       (add-skill workflow-list-available "List available workflows" ())
-       (add-skill workflow-load-instructions "Load an existing workflow instructions into the active context" (workflow_name_in_quotes))
-       (add-skill workflow-unload-instructions "Unload active workflow from the active context" ())
-       ))
+     (configure pluginWorkflowInstructionsDir (joinPath ((projectRootDirectory) instructions)))
+     (if (not (exists-directory (pluginWorkflowInstructionsDir)))
+       (Error (_loadOmegaClawPlugin) (strings-concat ("Instructions directory: " (pluginWorkflowInstructionsDir) " doesn't exist")))
+       (progn 
+         (let $dir (joinPath ((memoryDirectory) skills_workspace)) ())
+         (log INFO "workflow-plugin" (strings-concat ("Creating working directory: " $dir)))
+         (let $rc (make-directory $dir) ())
+         (if (exists-directory $dir)
+           (progn
+             (log INFO "workflow-plugin" "Adding plugin's skills")
+             (add-skill workflow-load-instructions "Load an existing workflow instructions into the active context" (workflow_name_in_quotes))
+             (add-skill workflow-unload-instructions "Unload active workflow from the active context" ())
+             (let $workflows (join (newline) (cons-atom "Available workflows: " (workflow-list-available)))
+               (add-prompt-extension workflows-available $workflows))
+             ())
+           $rc)))))
 
-; ============ WORKFLOW LOADER ============
+;; ============ WORKFLOW LOADER ============
 
-(= (get-existing-dir $paths)
-    (let $dir $paths
-       (if (exists-directory $dir)
-           $dir
-           (empty)))
-)
+(= (get-existing-dir $dir)
+   (if (exists-directory $dir)
+     $dir
+     (empty)))
+
 ;; Validate name
 ; TODO: calling Python validation code is replaced by stub.
 ; Can be returned back when https://github.com/trueagi-io/PeTTa/issues/196 is
 ; fixed.
 (= (valid-file-or-folder-name $filename) True)
+
+;!(import! &self utils.py)
+
 ;(= (valid-file-or-folder-name $filename)
 ;   (if (== (py-str ("valid")) (py-call (utils.validate_file_or_folder_name(py-str ($filename)))))
 ;       True
 ;       False))
 
-; FIXME: replace (instructionsDir) result by plugin parameter to allow user
-; configure the location of the workflows collection
-(= (instructionsDir) (get-existing-dir (library instructions)))
+(= (instructionsDir) (get-existing-dir (pluginWorkflowInstructionsDir)))
 (= (workflow-load-instructions $name)
    (if (not (valid-file-or-folder-name  $name))
        (send (py-str ("ERROR: invalid workflow name: " $name)))
-       (let $path (py-str ((instructionsDir) "/" $name "/SKILL.md"))
+       (let $path (joinPath ((instructionsDir) $name "SKILL.md"))
             (if (not (exists-file $path))
                 (send (py-str ("ERROR: skill file not found: " $path)))
                 (let $content (read-file $path)
@@ -60,7 +73,7 @@
 
 ; to load skills descriptions which are defined only for current workflow
 (= (add-workflow-skills $name)
-   (let $path (py-str ((instructionsDir) "/" $name "/skills"))
+   (let $path (joinPath ((instructionsDir) $name "skills"))
             (progn
               (import! &workflow_skills $path)
               (match &workflow_skills (skill $func $desc $args) (add-skill $func $desc $args))
@@ -80,16 +93,13 @@
         (collect-description $dirs $base)))
 
 ;; collects workflow description from description.txt
-(= (collect-description $dirs $base)
-   (if (== $dirs () )
-       ()
-       (let*  (($tail  (cdr-atom $dirs))
-              ($first (car-atom $dirs))
-              ($path  (py-str ($base "/" $first "/description.txt")))
-              ($rest (collect-description $tail $base)))
-         (if (exist-file $path)
-             (cons-atom (py-str ($first ": " (read-file $path))) $rest)
-            $rest))))
+(= (collect-description () $base) ())
+(= (collect-description (cons $first $tail) $base)
+   (let*  (($path  (joinPath ($base $first "description.txt")))
+           ($rest (collect-description $tail $base)))
+     (if (exists-file $path)
+       (cons-atom (strings-concat ($first ": " (read-file $path))) $rest)
+       $rest)))
 
 ( = (directory-files $dir)
    (progn (translatePredicate (directory_files $dir $files))
@@ -102,20 +112,17 @@
    )
 )
 
-(= (filter-dirs $files $dir)
-   (if (== $files ())
-       ()
-       (progn (translatePredicate (atom_string (car-atom $files) $first))
-               (let* (
-                      ($tail     (cdr-atom $files))
-                      ($fullpath (py-str ($dir "/" $first)))
-                      ($rest     (filter-dirs $tail $dir)))
-                         (if (or (== $first ".") (== $first ".."))
-                             $rest
-                             (if (exists-directory $fullpath)
-                                 (cons-atom $first $rest)
-                                 $rest))
-                 )
-        )
-    )
-)
+(= (filter-dirs () $dir) ())
+(= (filter-dirs (cons $head $tail) $dir)
+   (progn (translatePredicate (atom_string $head $first))
+          (let* (
+                 ($fullpath (joinPath ($dir $first)))
+                 ($rest     (filter-dirs $tail $dir)))
+            (if (or (== $first ".") (== $first ".."))
+              $rest
+              (if (exists-directory $fullpath)
+                (cons-atom $first $rest)
+                $rest))
+            )
+          )
+   )

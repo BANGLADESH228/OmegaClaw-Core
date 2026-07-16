@@ -48,7 +48,6 @@
 
 
 (= (researchDir)
-   ; FIXME: this directory should be created when workspace skill is loaded
    (let $dir (get-existing-dir (library memory/skills_workspace))
    (py-str ($dir "/research"))))
 
