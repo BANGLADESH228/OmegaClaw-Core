@@ -1,6 +1,7 @@
 !(import! &self (library lib_spaces))
 
 (= (pluginWorkflowInstructionsDir) (empty))
+(= (pluginWorkflowMemoryDir) (empty))
 
 (= (loadOmegaClawPlugin)
    (progn
@@ -8,10 +9,10 @@
      (if (not (exists-directory (pluginWorkflowInstructionsDir)))
        (Error (_loadOmegaClawPlugin) (strings-concat ("Instructions directory: " (pluginWorkflowInstructionsDir) " doesn't exist")))
        (progn 
-         (let $dir (joinPath ((memoryDirectory) skills_workspace)) ())
-         (log INFO "workflow-plugin" (strings-concat ("Creating working directory: " $dir)))
-         (let $rc (make-directory $dir) ())
-         (if (exists-directory $dir)
+         (configure pluginWorkflowMemoryDir (joinPath ((memoryDirectory) workflow_space)))
+         (log INFO "workflow-plugin" (strings-concat ("Creating working directory: " (pluginWorkflowMemoryDir))))
+         (let $rc (make-directory (pluginWorkflowMemoryDir)) ())
+         (if (exists-directory (pluginWorkflowMemoryDir))
            (progn
              (log INFO "workflow-plugin" "Adding plugin's skills")
              (add-skill workflow-load-instructions "Load an existing workflow instructions into the active context" (workflow_name_in_quotes))

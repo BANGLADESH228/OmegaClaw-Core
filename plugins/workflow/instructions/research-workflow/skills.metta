@@ -48,8 +48,8 @@
 
 
 (= (researchDir)
-   (let $dir (get-existing-dir (library memory/skills_workspace))
-   (py-str ($dir "/research"))))
+   (let $dir (get-existing-dir (pluginWorkflowMemoryDir))
+     (joinPath ($dir "research"))))
 
 
 ;; LLM decides to start research
