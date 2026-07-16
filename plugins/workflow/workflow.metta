@@ -5,7 +5,7 @@
 
 (= (loadOmegaClawPlugin)
    (progn
-     (configure pluginWorkflowInstructionsDir (joinPath ((projectRootDirectory) "plugins" "workflow" instructions)))
+     (configure pluginWorkflowInstructionsDir (joinPath ((projectRootDirectory) "plugins" "workflow" "instructions")))
      (if (not (exists-directory (pluginWorkflowInstructionsDir)))
        (Error (_loadOmegaClawPlugin) (strings-concat ("Instructions directory: " (pluginWorkflowInstructionsDir) " doesn't exist")))
        (progn 
@@ -77,7 +77,7 @@
    (let $path (joinPath ((instructionsDir) $name "skills"))
             (progn
               (import! &workflow_skills $path)
-              (match &workflow_skills (skill $func $desc $args) (add-skill $func $desc $args))
+              (collapse (match &workflow_skills (skill $func $desc $args) (add-skill $func $desc $args)))
               (pin (py-str ("Workflow skills loaded: " $name))))))
 
 ; to load skills descriptions
