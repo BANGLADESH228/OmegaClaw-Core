@@ -4,7 +4,7 @@
 
 (= (loadOmegaClawPlugin)
    (progn
-     (configure pluginWorkflowInstructionsDir (joinPath ((projectRootDirectory) instructions)))
+     (configure pluginWorkflowInstructionsDir (joinPath ((projectRootDirectory) "plugins" "workflow" instructions)))
      (if (not (exists-directory (pluginWorkflowInstructionsDir)))
        (Error (_loadOmegaClawPlugin) (strings-concat ("Instructions directory: " (pluginWorkflowInstructionsDir) " doesn't exist")))
        (progn 
