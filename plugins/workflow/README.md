@@ -24,7 +24,7 @@ When user asks to demonstrate workflow plugin load test-workflow instructions: (
 
 `SKILL.md` (required) is an agent skills file in the [common
 format](https://agentskills.io/specification). For example:
-```
+```md
 ---
 name: test-workflow
 description: Created to check how SKILL.md is loaded to OmegaClaw.
@@ -48,7 +48,7 @@ and other atoms are parameters of the `add-skill` function. See
 added as MeTTa functions.
 
 For example:
-```
+```metta
 (skill test-skill "Test skill to demonstrate workflow by sending message to the user" (message_in_quotes))
 
 (= (test-skill $message)
@@ -60,3 +60,18 @@ For example:
 Start an agent and ask it to use the workflow. For the test workflow above
 send: `Demonstrate workflow plugin`
 
+## Workflow parameters
+
+Wofkflow plugin OmegaClaw configuration parameters:
+- `pluginWorkflowInstructionsDir` - path to the directory which contains
+  available workflows. Default value is `<project
+  root>/plugins/workflow/instructions`
+- `pluginWorkflowMemoryDir` - path to the directory to keep workflow working
+  files when workflow is active. Default value is `<project
+  root>/memory/workflow_space`
+
+One can set this parameters passing them as a command line arguments. For
+example:
+```sh
+sh run.sh run.metta pluginWorkflowInstructionsDir="<path>"
+```
