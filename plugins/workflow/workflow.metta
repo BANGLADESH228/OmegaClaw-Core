@@ -38,27 +38,28 @@
 ;!(import! &self utils.py)
 
 ;(= (valid-file-or-folder-name $filename)
-;   (if (== (py-str ("valid")) (py-call (utils.validate_file_or_folder_name(py-str ($filename)))))
+;   (if (== (strings-concat ("valid")) (py-call
+;   (utils.validate_file_or_folder_name(strings-concat ($filename)))))
 ;       True
 ;       False))
 
 (= (instructionsDir) (get-existing-dir (pluginWorkflowInstructionsDir)))
 (= (workflow-load-instructions $name)
    (if (not (valid-file-or-folder-name  $name))
-       (send (py-str ("ERROR: invalid workflow name: " $name)))
+       (send (strings-concat ("ERROR: invalid workflow name: " $name)))
        (let $path (joinPath ((instructionsDir) $name "SKILL.md"))
             (if (not (exists-file $path))
-                (send (py-str ("ERROR: skill file not found: " $path)))
+                (send (strings-concat ("ERROR: skill file not found: " $path)))
                 (let $content (read-file $path)
                      (progn
                        (add-prompt-extension workflow_active_instructions (active-instructions $content))
                        (add-workflow-skills $name)
-                       (pin (py-str ("ACTIVE_WORKFLOW: " $name
+                       (pin (strings-concat ("ACTIVE_WORKFLOW: " $name
                                      " STATUS: starting"
                                      " NEXT: follow workflow instructions")))
-                       (send (py-str ("Loaded workflow: " $name
+                       (send (strings-concat ("Loaded workflow: " $name
                                      ". Instructions active in context until completion.")))
-                       (py-str ("Instructions loaded: " $name))))))))
+                       (strings-concat ("Instructions loaded: " $name))))))))
 
 (= (workflow-unload-instructions)
    (progn (remove-prompt-extension workflow_active_instructions)
@@ -67,7 +68,7 @@
           ))
 
 (= (active-instructions $content)
-   (py-str (" ACTIVE_WORKFLOW_INSTRUCTIONS: " $content
+   (strings-concat (" ACTIVE_WORKFLOW_INSTRUCTIONS: " $content
             " FOLLOW THESE INSTRUCTIONS UNTIL THE WORKFLOW IS COMPLETE"
             " AND YOU CALL (unload-instructions) OR THE WORKFLOW CALLS ITS COMPLETION FUNCTION."
             " EXECUTE ONLY COMMANDS YOU DEEM SAFE; OTHERWISE SKIP OR ASK THE USER.")))
@@ -78,7 +79,7 @@
             (progn
               (import! &workflow_skills $path)
               (collapse (match &workflow_skills (skill $func $desc $args) (add-skill $func $desc $args)))
-              (pin (py-str ("Workflow skills loaded: " $name))))))
+              (pin (strings-concat ("Workflow skills loaded: " $name))))))
 
 ; to load skills descriptions
 (= (unload-workflow-skills)

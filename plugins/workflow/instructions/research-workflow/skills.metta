@@ -12,7 +12,11 @@
 
 ;; Build a safe path or empty string if validation fails
 (= (safe-instruction-path $project_dir $research-name $filename)
-   (py-call (helper.safe_path (py-str ($project_dir)) (py-str ($research-name)) (py-str ($filename)))))
+   ; TODO: calling Python validation code is replaced by stub.
+   ; Can be returned back when https://github.com/trueagi-io/PeTTa/issues/196 is
+   ; fixed.
+   ;(py-call (helper.safe_path $project_dir $research-name $filename)))
+   (py-call (joinPath ($project_dir $research-name $filename))))
 
 (= (load-research-dynamic-instructions  $research-name $filename)
     (let $d (researchDir) (load-dynamic-instructions $d $research-name $filename)))
@@ -20,30 +24,30 @@
 ; loads instructions created during workflow
 (= (load-dynamic-instructions $project_dir $research-name $filename)
    (if (not (valid-file-or-folder-name $research-name))
-       (send (py-str ("ERROR: invalid name: " $research-name)))
+       (send (strings-concat ("ERROR: invalid name: " $research-name)))
        (if (not (valid-file-or-folder-name $filename))
-           (send (py-str ("ERROR: invalid filename: " $filename)))
+           (send (strings-concat ("ERROR: invalid filename: " $filename)))
            (let $path (safe-instruction-path $project_dir $research-name $filename)
                 (if (== $path "")
-                    (send (py-str ("ERROR: path traversal rejected for " $research-name "/" $filename)))
+                    (send (strings-concat ("ERROR: path traversal rejected for " $research-name "/" $filename)))
                     (load-dynamic-instructions-safe $path $research-name $filename))))))
 
 ; actually loads the file (internal). Only called after validation.
 (= (load-dynamic-instructions-safe $path $research-name $filename)
    (if (not (exists-file $path))
-       (send (py-str ("ERROR: file not found: " $path)))
+       (send (strings-concat ("ERROR: file not found: " $path)))
        (let $content (read-file $path)
             (progn
               (change-state! &active_instructions $content)
               (appendToHistory ((get_time_as_string)
                                 (newline)
-                                (py-str ("LOADED [" $research-name "/" $filename "]"))
+                                (strings-concat ("LOADED [" $research-name "/" $filename "]"))
                                 (newline)))
-              (pin (py-str ("ACTIVE: " $research-name
+              (pin (strings-concat ("ACTIVE: " $research-name
                             " FILE: " $filename
                             " STATUS: executing"
                             " NEXT: follow loaded instructions")))
-              (send (py-str ("Loaded " $filename " for " $research-name ". Following instructions.")))
+              (send (strings-concat ("Loaded " $filename " for " $research-name ". Following instructions.")))
               $content))))
 
 
@@ -56,35 +60,35 @@
 ;; creates folders for research and asks to create 00_problem.md then search online
 (= (research-start $research-name $topic)
     (if (valid-file-or-folder-name $research-name)
-       (progn (shell (py-str ("mkdir -p " (researchDir) "/" $research-name "/src")))
-              (shell (py-str ("mkdir -p " (researchDir) "/" $research-name "/data")))
-              (shell (py-str ("mkdir -p " (researchDir) "/" $research-name "/runs")))
-              (shell (py-str ("mkdir -p " (researchDir) "/" $research-name "/figures")))
-              (write-file (py-str ((researchDir) "/" $research-name "/topic.txt")) $topic)
-              (send (py-str ("Created project: " (researchDir) "/" $research-name "\n"
+       (progn (shell (strings-concat ("mkdir -p " (researchDir) "/" $research-name "/src")))
+              (shell (strings-concat ("mkdir -p " (researchDir) "/" $research-name "/data")))
+              (shell (strings-concat ("mkdir -p " (researchDir) "/" $research-name "/runs")))
+              (shell (strings-concat ("mkdir -p " (researchDir) "/" $research-name "/figures")))
+              (write-file (strings-concat ((researchDir) "/" $research-name "/topic.txt")) $topic)
+              (send (strings-concat ("Created project: " (researchDir) "/" $research-name "\n"
                              "Folders: src/ data/ runs/ figures/")))
-              (pin (py-str ("RESEARCH_ACTIVE: " $research-name
+              (pin (strings-concat ("RESEARCH_ACTIVE: " $research-name
                             " DIR: " (researchDir) "/" $research-name
                             " TOPIC: " $topic
                             " STEP: 1-problem"
                             " ACTION_REQUIRED: Write 00_problem.md then search online"
                             " for related methods and data sources.")))
               $research-name)
-        (send (py-str ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
+        (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
        )
 )
 
 ;; update current step
 (= (research-step $research-name $step $result $next)
     (if (valid-file-or-folder-name $research-name)
-       (progn (appendToHistory  ((get_time_as_string) (newline) (py-str  ("RESEARCH [" $research-name "] done: " $step " — " $result)) (newline)) )
-              (send (py-str ("[" $research-name "] done: " $step)))
-              (pin (py-str ("RESEARCH_ACTIVE: " $research-name
+       (progn (appendToHistory  ((get_time_as_string) (newline) (strings-concat  ("RESEARCH [" $research-name "] done: " $step " — " $result)) (newline)) )
+              (send (strings-concat ("[" $research-name "] done: " $step)))
+              (pin (strings-concat ("RESEARCH_ACTIVE: " $research-name
                             " DONE: " $step
                             " RESULT: " $result
                             " NEXT: " $next)))
-              (py-str ("Done: " $step)))
-        (send (py-str ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
+              (strings-concat ("Done: " $step)))
+        (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
      )
 )
 
@@ -92,14 +96,14 @@
 ;; Checkpoint: wait user's response
 (= (research-checkpoint $research-name $message)
     (if (valid-file-or-folder-name $research-name)
-        (progn (pin (py-str ("RESEARCH_ACTIVE: " $research-name
+        (progn (pin (strings-concat ("RESEARCH_ACTIVE: " $research-name
                             " STATUS: WAITING_FOR_USER"
                             " DO_NOT_PROCEED"
                             )))
-              (send (py-str ("CHECKPOINT [" $research-name "]\n" $message "\n"
+              (send (strings-concat ("CHECKPOINT [" $research-name "]\n" $message "\n"
                              "Reply to continue.")))
               "Waiting for user")
-        (send (py-str ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
+        (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
      )
 )
 
@@ -107,12 +111,12 @@
 (= (research-complete $research-name)
     (if (valid-file-or-folder-name $research-name)
         (progn (change-state! &active_instructions "")
-              (send (py-str ("Research complete: " $research-name
+              (send (strings-concat ("Research complete: " $research-name
                              "\nResults in " (researchDir) "/" $research-name "/"
                              "\nWorkflow unloaded from context.")))
-              (appendToHistory  ((get_time_as_string) (newline) (py-str  ("RESEARCH [" $research-name "] COMPLETED")) (newline)) )
+              (appendToHistory  ((get_time_as_string) (newline) (strings-concat  ("RESEARCH [" $research-name "] COMPLETED")) (newline)) )
               (pin "No active research. No active workflow.")
               "Research complete, workflow unloaded")
-         (send (py-str ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
+         (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
       )
 )
