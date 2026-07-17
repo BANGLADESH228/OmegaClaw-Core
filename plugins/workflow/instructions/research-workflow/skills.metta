@@ -15,7 +15,7 @@
    ; TODO: calling Python validation code is replaced by stub.
    ; Can be returned back when https://github.com/trueagi-io/PeTTa/issues/196 is
    ; fixed.
-   ;(py-call (helper.safe_path $project_dir $research-name $filename)))
+   ;(py-call (utils.safe_path $project_dir $research-name $filename)))
    (py-call (joinPath ($project_dir $research-name $filename))))
 
 (= (load-research-dynamic-instructions  $research-name $filename)
@@ -38,7 +38,7 @@
        (send (strings-concat ("ERROR: file not found: " $path)))
        (let $content (read-file $path)
             (progn
-              (change-state! &active_instructions $content)
+              (workflow-change-active-instructions $content)
               (appendToHistory ((get_time_as_string)
                                 (newline)
                                 (strings-concat ("LOADED [" $research-name "/" $filename "]"))
@@ -110,7 +110,7 @@
 ;; Unload research skill
 (= (research-complete $research-name)
     (if (valid-file-or-folder-name $research-name)
-        (progn (change-state! &active_instructions "")
+        (progn (workflow-unload-instructions)
               (send (strings-concat ("Research complete: " $research-name
                              "\nResults in " (researchDir) "/" $research-name "/"
                              "\nWorkflow unloaded from context.")))

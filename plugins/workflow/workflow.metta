@@ -87,6 +87,11 @@
      (match &workflow_skills (skill $func $desc $args) (remove-skill $func))
      (remove-all-atoms &workflow_skills)))
 
+(= (workflow-change-active-instructions $content)
+   (progn
+     (remove-prompt-extension workflow_active_instructions)
+     (add-prompt-extension workflow_active_instructions $content)))
+
 ;;========================== Functions to load workflow description =======================
 ;; returns workflow name and its description
 (= (workflow-list-available)
