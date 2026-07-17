@@ -34,7 +34,7 @@
     "metta (|~ ((Implication (Inheritance $1 (IntSet Feathered))"
     "           (Inheritance $1 Bird)) (stv 1.0 0.9))"
     "          ((Inheritance Pingu (IntSet Feathered)) (stv 1.0 0.9)))"))
-    ; FIXME: add load-plugin/unload-plugin skills
+    ; TODO add load-plugin/unload-plugin skills
 
 
 (= (read-file $file)

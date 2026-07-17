@@ -36,4 +36,4 @@
      (collapse (match &self (= (prompt-extension $handle) $text) (remove-atom &self (= (prompt-extension $handle) $text))))
      True))
 
-; FIXME: add MeTTa API to add communication channels and LLM integrations
+; TODO add MeTTa API to add communication channels and LLM integrations
