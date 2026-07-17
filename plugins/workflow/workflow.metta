@@ -75,7 +75,7 @@
 
 ; to load skills descriptions which are defined only for current workflow
 (= (add-workflow-skills $name)
-   (let $path (joinPath ((instructionsDir) $name "skills"))
+   (let $path (joinPath ((instructionsDir) $name "skill"))
             (progn
               (import! &workflow_skills $path)
               (collapse (match &workflow_skills (skill $func $desc $args) (add-skill $func $desc $args)))
