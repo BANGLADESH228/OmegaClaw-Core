@@ -10,6 +10,7 @@
 !(import! &self (library OmegaClaw-Core ./src/utils))
 !(import! &self (library OmegaClaw-Core ./src/logger.py))
 !(import! &self (library OmegaClaw-Core ./src/log))
+!(import! &self (library OmegaClaw-Core ./src/config))
 !(import! &self (library OmegaClaw-Core ./src/plugin.py))
 !(import! &self (library OmegaClaw-Core ./src/plugin))
 !(import! &self (library OmegaClaw-Core ./src/agentverse.py))
