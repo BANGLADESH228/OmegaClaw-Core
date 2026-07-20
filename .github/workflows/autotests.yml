@@ -18,15 +18,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: linux/amd64
-            platform_suffix: amd64
-          - platform: linux/arm64
-            platform_suffix: arm64
+        platform: [linux/amd64, linux/arm64]
     env:
       AUTOTESTS_OMEGACLAW_CONTAINER: omegaclaw
-      AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}-${{ matrix.platform_suffix }}'
+      AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}'
     steps:
+      - name: Complete tag name
+        run: |
+          echo "AUTOTESTS_OMEGACLAW_TAG=$AUTOTESTS_OMEGACLAW_TAG-${PLATFORM////-}" >> "$GITHUB_ENV"
+          echo "Completed image tag $AUTOTESTS_OMEGACLAW_TAG"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
