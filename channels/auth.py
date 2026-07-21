@@ -3,6 +3,13 @@ import os
 import time
 import urllib.request
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
+
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 _proxy_url = None
 _auth_enabled = None
@@ -33,7 +40,8 @@ def is_auth_enabled():
         with urllib.request.urlopen(url, timeout=5) as resp:
             data = json.loads(resp.read())
             _auth_enabled = data.get("enabled", False)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Could not read auth status from proxy, assuming auth is disabled: {e}")
         _auth_enabled = False
     return _auth_enabled
 
@@ -49,7 +57,8 @@ def verify_token(candidate):
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read())
             return data.get("match", False)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Token verification request failed, denying: {e}")
         return False
 
 
@@ -61,7 +70,7 @@ def store_channel_authenticated_user_id(channel_identifier, user_id):
     # For any single run of OmegaClaw, allow only a single save of a user-id or verification    
     global _user_ID_processed
     if _user_ID_processed:
-        print(f"[{channel_identifier}] Warning: a user already was validated, ignoring")
+        logger.warning(f"[{channel_identifier}] Warning: a user already was validated, ignoring")
         return False    
     channel_identifier = str(channel_identifier or "").strip()
     if not channel_identifier:
@@ -92,7 +101,7 @@ def get_channel_saved_user_id(channel_identifier, user_id):
     # For any single run of OmegaClaw, allow only a single save of a user-id or verification    
     global _user_ID_processed
     if _user_ID_processed:
-        print(f"[{channel_identifier}] Warning: a user was already validated, ignoring")
+        logger.warning(f"[{channel_identifier}] Warning: a user was already validated, ignoring")
         return False
 
     channel_identifier = str(channel_identifier or "").strip()
@@ -107,7 +116,8 @@ def get_channel_saved_user_id(channel_identifier, user_id):
                     record = json.loads(line)
                     saved_channel_identifier = str(record.get("channel_identifier", "")).strip()
                     saved_user_id = str(record.get("user_id", "")).strip()
-                except (AttributeError, json.JSONDecodeError):
+                except (AttributeError, json.JSONDecodeError) as e:
+                    logger.warning(f"Skipping malformed channel authenticated user record: {e}")
                     continue
                 if saved_channel_identifier == channel_identifier and saved_user_id == user_id:
                     _user_ID_processed = True
@@ -123,14 +133,14 @@ def authenticate_channel_user(channel_identifier, user_id, candidate):
     if verify_token(candidate):
        if store_channel_authenticated_user_id(channel_identifier, user_id):
             label = str(channel_identifier).upper()
-            print(f"[{label}] Saved authenticated user ID")
+            logger.info(f"[{label}] Saved authenticated user ID")
             return "auth_bound"
        else:
-            print(f"[{label}] ERROR -- Unable to save user ID")
+            logger.error(f"[{label}] ERROR -- Unable to save user ID")
             return "ignore"
     elif get_channel_saved_user_id(channel_identifier, user_id):
         label = str(channel_identifier).upper()
-        print(f"[{label}] Verified previously validated user ID")
+        logger.info(f"[{label}] Verified previously validated user ID")
         return "allow"
     else:
         return "ignore"
