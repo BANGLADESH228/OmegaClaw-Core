@@ -1,0 +1,25 @@
+# main loop
+maxNewInputLoops: 50
+maxWakeLoops: 1
+spamShield: False
+sleepInterval: 1
+LLM: gpt-5.4
+provider: Anthropic
+maxOutputToken: 6000
+reasoningMode: medium
+wakeupInterval: 600
+logConfigPath: ""
+memoryDirectory: "./"
+
+# memory
+maxFeedback: 50000
+maxRecallItems: 20
+maxEpisodeRecallLines: 20
+maxHistory: 30000
+embeddingprovider: Local
+
+# policy
+securityPolicyPath: "./repos/OmegaClaw-Core/profile/policy.yaml"
+
+# channels
+commchannel: irc
