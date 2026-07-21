@@ -67,7 +67,7 @@
                                (initKnowledge)
                                (initPlugins)
                                (initChannels)
-                               (llmProviderConfig (provider)))
+                               (llmProviderStart (provider)))
                         (change-state! &loops (- (get-state &loops) 1)))
           (let $prompt (getContext)
                (progn (log INFO "loop" (---------iteration $k))

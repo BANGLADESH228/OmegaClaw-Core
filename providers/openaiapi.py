@@ -1,6 +1,7 @@
 import os
 import lib_llm_ext as llm
 import providers
+from config import config_get_by_key
 
 class OpenAIAPI(providers.LLMProvider):
 
@@ -8,18 +9,21 @@ class OpenAIAPI(providers.LLMProvider):
         super().__init__()
         self._name = name
 
-    def api_token_var(self, config):
-        return config.get("api_token_var", "OPENAIAPI_API_KEY")
+    def api_token_var(self):
+        return config_get_by_key("api_token_var", "OPENAIAPI_API_KEY")
 
-    def model(self, config):
-        return config.get("model", "qwen3.5:9b")
+    def model(self):
+        return config_get_by_key("model", "qwen3.5:9b")
 
-    def base_url(self, config):
-        return config.get("openaiapi_url", "http://localhost:11434/v1/")
+    def base_url(self):
+        return config_get_by_key("openaiapi_url", "http://localhost:11434/v1/")
 
-    def config(self, config: dict) -> None:
-        self.delegate = llm.AIProvider(self._name, self.api_token_var(config),
-                                       self.model(config), self.base_url(config))
+    def start(self) -> None:
+        self.delegate = llm.AIProvider(self._name, self.api_token_var(),
+                                       self.model(), self.base_url())
+
+    def stop(self) -> None:
+        self.delegate.stop()
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
         return self.delegate.chat(prompt, max_tokens, reasoning_mode)
@@ -33,13 +37,13 @@ class OpenAIAPIPreconfigured(OpenAIAPI):
         self._default_model = default_model
         self._base_url = base_url
 
-    def api_token_var(self, config):
+    def api_token_var(self):
         return self._api_token_var
 
-    def model(self, config):
-        return config.get("model", self._default_model)
+    def model(self):
+        return config_get_by_key("model", self._default_model)
 
-    def base_url(self, config):
+    def base_url(self):
         return self._base_url
 
 def loadOmegaClawPlugin():

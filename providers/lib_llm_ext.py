@@ -63,6 +63,9 @@ class AbstractAIProvider:
     def is_available(self) -> bool:
         raise NotImplementedError
 
+    def stop(self) -> None:
+        raise NotImplementedError
+
 class AIProvider(AbstractAIProvider):
     """Lazy AI provider with on-demand initialization."""
 
@@ -137,6 +140,10 @@ class AIProvider(AbstractAIProvider):
         """Unescape special characters."""
         return text.replace("_quote_", '"').replace("_apostrophe_", "'").replace("</arg_value>", " ") \
                     .replace("</tool_call>", " ").replace("<arg_value>", " ").replace("<tool_call>", " ")
+
+    def stop(self) -> None:
+        self._client.close()
+        self._client = None
 
 
 _embedding_model = None

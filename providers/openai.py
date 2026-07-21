@@ -11,10 +11,13 @@ class OpenAIProvider(providers.LLMProvider):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        model = config.get("model", "gpt-5.5")
+    def start(self) -> None:
+        model = config_get_by_key("model", "gpt-5.5")
         self.delegate = OpenAIProviderImpl("OpenAI", "OPENAI_API_KEY",
                                            model, "https://api.openai.com/v1")
+
+    def stop(self) -> None:
+        self.delegate.stop()
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
         return self.delegate.chat(prompt, max_tokens, reasoning_mode)

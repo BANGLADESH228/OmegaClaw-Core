@@ -13,10 +13,13 @@ class OpenRouterProvider(providers.LLMProvider):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        model = config.get("model", "z-ai/glm-5.2")
+    def start(self) -> None:
+        model = config_get_by_key("model", "z-ai/glm-5.2")
         self.delegate = OpenRouterProviderImpl("OpenRouter", "OPENROUTER_API_KEY",
                                                model, "https://openrouter.ai/api/v1")
+
+    def stop(self) -> None:
+        self.delegate.stop()
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
         return self.delegate.chat(prompt, max_tokens, reasoning_mode)
