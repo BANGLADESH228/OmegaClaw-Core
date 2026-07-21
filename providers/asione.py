@@ -11,7 +11,8 @@ class ASIOneProvider(providers.LLMProvider):
         super().__init__()
 
     def start(self) -> None:
-        model = config_get_by_key("model", "asi1-ultra")
+        asione_model = config_get_by_key("asione_model", "asi1-ultra")
+        model = config_get_by_key("model", asione_model)
         self.delegate = ASIOneProviderImpl("ASIOne", "ASIONE_API_KEY",
                                            model, "https://api.asi1.ai/v1")
 

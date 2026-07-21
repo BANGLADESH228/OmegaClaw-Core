@@ -48,18 +48,26 @@ WS_URL: ""
 WS_TOKEN: ""
 
 # providers
-#model: # default value depends on provider
+#model: # default value depends on provider (see *_model below)
 
 # OpenAIAPI
 api_token_var: "OPENAIAPI_API_KEY"
 openaiapi_url: "http://localhost:11434/v1/"
+openaiapi_model: "qwen3.5:9b"
+asicloud_model: "minimax/minimax-m3"
+anthropic_model: "claude-opus-4-8"
 
 # OpenRouter
+openrouter_model: "z-ai/glm-5.2"
 #OPENROUTER_SESSION_ID:
 OPENROUTER_CACHE_TTL: 5m
 
 # OpenAI
+openai_model: "gpt-5.5"
 #OPENAI_PROMPT_CACHE_KEY:
+
+# ASIOne
+asione_model: "asi1-ultra"
 
 # skills
 

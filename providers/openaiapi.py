@@ -13,7 +13,8 @@ class OpenAIAPI(providers.LLMProvider):
         return config_get_by_key("api_token_var", "OPENAIAPI_API_KEY")
 
     def model(self):
-        return config_get_by_key("model", "qwen3.5:9b")
+        openaiapi_model = config_get_by_key("openaiapi_model", "qwen3.5:9b")
+        return config_get_by_key("model", openaiapi_model)
 
     def base_url(self):
         return config_get_by_key("openaiapi_url", "http://localhost:11434/v1/")
@@ -48,5 +49,7 @@ class OpenAIAPIPreconfigured(OpenAIAPI):
 
 def loadOmegaClawPlugin():
     providers.registerLLMProvider("OpenAIAPI", OpenAIAPI("OpenAIAPI"))
-    providers.registerLLMProvider("ASICloud", OpenAIAPIPreconfigured("ASICloud", "ASI_API_KEY", "minimax/minimax-m3", "https://inference.asicloud.cudos.org/v1"))
-    providers.registerLLMProvider("Anthropic", OpenAIAPIPreconfigured("Anthropic", "ANTHROPIC_API_KEY", "claude-opus-4-8", "https://api.anthropic.com/v1/"))
+    asicloud_model = config_get_by_key("asicloud_model", "minimax/minimax-m3")
+    providers.registerLLMProvider("ASICloud", OpenAIAPIPreconfigured("ASICloud", "ASI_API_KEY", asicloud_model, "https://inference.asicloud.cudos.org/v1"))
+    anthropic_model = config_get_by_key("anthropic_model", "claude-opus-4-8")
+    providers.registerLLMProvider("Anthropic", OpenAIAPIPreconfigured("Anthropic", "ANTHROPIC_API_KEY", anthropic_model, "https://api.anthropic.com/v1/"))

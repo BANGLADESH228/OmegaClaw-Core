@@ -14,7 +14,8 @@ class OpenRouterProvider(providers.LLMProvider):
         super().__init__()
 
     def start(self) -> None:
-        model = config_get_by_key("model", "z-ai/glm-5.2")
+        openrouter_model = config_get_by_key("openrouter_model", "z-ai/glm-5.2")
+        model = config_get_by_key("model", openrouter_model)
         self.delegate = OpenRouterProviderImpl("OpenRouter", "OPENROUTER_API_KEY",
                                                model, "https://openrouter.ai/api/v1")
 
