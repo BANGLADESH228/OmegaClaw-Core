@@ -16,7 +16,7 @@
    ; Can be returned back when https://github.com/trueagi-io/PeTTa/issues/196 is
    ; fixed.
    ;(py-call (utils.safe_path $project_dir $research-name $filename)))
-   (py-call (joinPath ($project_dir $research-name $filename))))
+   (joinPath ($project_dir $research-name $filename)))
 
 (= (load-research-dynamic-instructions  $research-name $filename)
     (let $d (researchDir) (load-dynamic-instructions $d $research-name $filename)))
