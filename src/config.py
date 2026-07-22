@@ -10,6 +10,8 @@ _COMMAND_LINE = {}
 _CONFIG_FILE = {}
 
 def init_config(command_line):
+    """Initialize configuration: drop configuration cache and load
+    configuration file"""
     global _CONFIG, _COMMAND_LINE, _CONFIG_FILE
     _CONFIG = {}
     _COMMAND_LINE = command_line_to_dict(command_line)
@@ -26,6 +28,8 @@ def init_config(command_line):
         logger.exception(f"Could not load configuration file {config_path}")
 
 def config_get_by_key(key, default=None):
+    """Get configuration parameter from the list of sources: (1) command line
+    parameters, (2) configuration file, (3) use $default value."""
     global _CONFIG, _COMMAND_LINE, _CONFIG_FILE
     if key in _CONFIG:
         return _CONFIG.get(key)
