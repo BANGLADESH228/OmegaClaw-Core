@@ -38,17 +38,10 @@
        (send (strings-concat ("ERROR: file not found: " $path)))
        (let $content (read-file $path)
             (progn
+              (log INFO "workflow-research" (strings-concat "Loading file into prompt: " $path))
               (workflow-change-active-instructions $content)
-              (appendToHistory ((get_time_as_string)
-                                (newline)
-                                (strings-concat ("LOADED [" $research-name "/" $filename "]"))
-                                (newline)))
-              (pin (strings-concat ("ACTIVE: " $research-name
-                            " FILE: " $filename
-                            " STATUS: executing"
-                            " NEXT: follow loaded instructions")))
               (send (strings-concat ("Loaded " $filename " for " $research-name ". Following instructions.")))
-              $content))))
+             ))))
 
 
 (= (researchDir)
@@ -67,27 +60,19 @@
               (write-file (strings-concat ((researchDir) "/" $research-name "/topic.txt")) $topic)
               (send (strings-concat ("Created project: " (researchDir) "/" $research-name "\n"
                              "Folders: src/ data/ runs/ figures/")))
-              (pin (strings-concat ("RESEARCH_ACTIVE: " $research-name
-                            " DIR: " (researchDir) "/" $research-name
-                            " TOPIC: " $topic
-                            " STEP: 1-problem"
-                            " ACTION_REQUIRED: Write 00_problem.md then search online"
-                            " for related methods and data sources.")))
-              $research-name)
+              )
         (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
-       )
+     )
 )
 
 ;; update current step
 (= (research-step $research-name $step $result $next)
     (if (valid-file-or-folder-name $research-name)
-       (progn (appendToHistory  ((get_time_as_string) (newline) (strings-concat  ("RESEARCH [" $research-name "] done: " $step " — " $result)) (newline)) )
-              (send (strings-concat ("[" $research-name "] done: " $step)))
-              (pin (strings-concat ("RESEARCH_ACTIVE: " $research-name
-                            " DONE: " $step
-                            " RESULT: " $result
-                            " NEXT: " $next)))
-              (strings-concat ("Done: " $step)))
+        (progn
+            (send (strings-concat ("[" $research-name "] done: " $step)))
+            (appendToHistory  ((get_time_as_string) (newline)
+                (strings-concat  ("RESEARCH [" $research-name "] done: " $step " — " $result "; next: " $next )) (newline)) )
+            (strings-concat ("Done: " $step)))
         (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
      )
 )
@@ -96,12 +81,13 @@
 ;; Checkpoint: wait user's response
 (= (research-checkpoint $research-name $message)
     (if (valid-file-or-folder-name $research-name)
-        (progn (pin (strings-concat ("RESEARCH_ACTIVE: " $research-name
-                            " STATUS: WAITING_FOR_USER"
-                            " DO_NOT_PROCEED"
-                            )))
+        (progn
               (send (strings-concat ("CHECKPOINT [" $research-name "]\n" $message "\n"
                              "Reply to continue.")))
+              (appendToHistory  ((get_time_as_string) (newline) (strings-concat ("RESEARCH_ACTIVE: " $research-name
+                            " STATUS: WAITING_FOR_USER"
+                            " DO_NOT_PROCEED"
+                            ))  (newline)))
               "Waiting for user")
         (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
      )
@@ -115,7 +101,6 @@
                              "\nResults in " (researchDir) "/" $research-name "/"
                              "\nWorkflow unloaded from context.")))
               (appendToHistory  ((get_time_as_string) (newline) (strings-concat  ("RESEARCH [" $research-name "] COMPLETED")) (newline)) )
-              (pin "No active research. No active workflow.")
               "Research complete, workflow unloaded")
          (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))
       )
