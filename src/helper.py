@@ -188,6 +188,7 @@ def test_balance_parenthesis():
     assert balance_parentheses('') == '()'
     assert balance_parentheses('   ') == '()'
     assert balance_parentheses('()\nsend hello') == '((send "hello"))'
+    assert balance_parentheses('write-file "test.txt" hello\nworld') == '((write-file "test.txt" "hello\\nworld"))'
 
 if __name__ == "__main__":
     test_balance_parenthesis()
