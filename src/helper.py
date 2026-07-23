@@ -26,6 +26,7 @@ LLM_COMMANDS = {
     "tavily-search",
     "technical-analysis",
     "write-file",
+    "get-io-policy"
 }
 
 
