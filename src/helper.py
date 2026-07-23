@@ -64,7 +64,10 @@ def around_time(needle_time_str, k):
     return ret
 
 def quote_arg(x):
-    return json.dumps(x, ensure_ascii=False)
+    if x.startswith('"') and x.endswith('"') and "\n" not in x:
+        return x
+    else:
+        return json.dumps(x, ensure_ascii=False)
 
 def starts_command_line(line):
     s = line.lstrip()
@@ -143,18 +146,12 @@ def balance_parentheses(s):
                 filename = quote_arg(split_rest[0])
                 content = split_rest[1].strip() if len(split_rest) > 1 else ""
             if content:
-                if content.startswith('"') and content.endswith('"') and "\n" not in content:
-                    sexprs.append(f"({cmd} {filename} {content})")
-                else:
-                    sexprs.append(f"({cmd} {filename} {quote_arg(content)})")
+                sexprs.append(f"({cmd} {filename} {quote_arg(content)})")
             else:
                 sexprs.append(f"({cmd} {filename})")
             continue
         if rest:
-            if rest.startswith('"') and rest.endswith('"') and "\n" not in rest:
-                sexprs.append(f"({cmd} {rest})")
-            else:
-                sexprs.append(f"({cmd} {quote_arg(rest)})")
+            sexprs.append(f"({cmd} {quote_arg(rest)})")
         else:
             sexprs.append(f"({cmd})")
     ret = " ".join(sexprs)
