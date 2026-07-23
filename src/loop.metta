@@ -1,7 +1,6 @@
 (= (maxNewInputLoops) (empty))
 (= (maxWakeLoops) (empty))
 (= (sleepInterval) (empty))
-(= (LLM) (empty))
 (= (provider) (empty))
 (= (maxOutputToken) (empty))
 (= (reasoningMode) (empty))
@@ -14,7 +13,6 @@
           (configure maxWakeLoops 1)
           (configure spamShield False)
           (configure sleepInterval 1) ;10
-          (configure LLM gpt-5.4)
           (configure provider Anthropic)
           (configure maxOutputToken 6000)
           (configure reasoningMode medium)

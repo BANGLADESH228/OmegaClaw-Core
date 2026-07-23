@@ -131,51 +131,26 @@ After the script finishes, your OmegaClaw bot will have the preset knowledge sto
 
 If you want to skip preloading the knowledge then run `export IMPORT_KB_ON_START=0`
 
-## Reference — Configuration Options
+## Configuration Options
 
-### General
+There are the following sources of the configuration parameters for the
+OmegaClaw agent:
+- command line parameters
+- configuration file
 
-| Parameter | Default | Meaning |
-|---|---|---|
-| `maxNewInputLoops` | 50 | Turns the agent keeps running after a new human message before idling (seconds) |
-| `maxWakeLoops` | 1 | Extra turns granted on each scheduled wake-up |
-| `sleepInterval` | 1 | Delay between loop iterations (seconds) |
-| `wakeupInterval` | 600 | How long idle before the next scheduled wake-up (seconds) |
-| `LLM` | `gpt-5.4` | Model identifier passed to the provider (used with OpenAI provider only) |
-| `provider` | `Anthropic` | LLM provider, see the table of the providers above |
-| `model` | provider specific | LLM model to use, depends on provider |
-| `openaiapi_url` | http://localhost:11434/v1 | LLM endpoint URL. Only used by `OpenAIAPI` provider. |
-| `maxOutputToken` | 6000 | Output cap passed to the provider |
-| `reasoningMode` | `medium` | Reasoning-effort hint passed to the provider (OpenAI only) |
-| `securityPolicyPath` | ./repos/OmegaClaw-Core/profile/policy.yaml | Path to the security profile written using [OpenShell YAML](https://docs.nvidia.com/openshell/reference/policy-schema#filesystem-policy). See [./profile/policy.yaml](./profile/policy.yaml) as an example. Empty value disables restrictions. |
+OmegaClaw looks for the parameter in each of the locations. Command line
+parameter overrides configuration file value. The full list of parameters with
+descriptions and default values can be found in [default configuration
+file](/config/config.yaml).
 
-### Memory (`src/memory.metta`)
+Configuration file location can be specified manually using `config` option:
+```sh
+sh run.sh run.metta config=<config.yaml path>
+```
 
-| Parameter | Default | Meaning |
-|---|---|---|
-| `maxFeedback` | 50000 | Ceiling on `LAST_SKILL_USE_RESULTS` text fed back into the prompt (chars) |
-| `maxRecallItems` | 20 | Items returned by `query` |
-| `maxEpisodeRecallLines` | 20 | Lines returned by `episodes` |
-| `maxHistory` | 30000 | Tail of `memory/history.metta` included in the prompt (chars) |
-| `embeddingprovider` | `Local` | `Local` (Python-side model) or `OpenAI` (requires `OPENAI_API_KEY`) |
-
-### Channels (`src/channels.metta`)
-
-| Parameter | Default | Meaning |
-|---|---|---|
-| `commchannel` | `irc` | Type of the communication channel for agent to use - `irc`, `telegram`, `mattermost`, `slack` or `websocket` |
-| `IRC_channel` | `##omegaclaw` | IRC channel to join |
-| `IRC_server` | `irc.quakenet.org` | IRC server hostname |
-| `IRC_port` | 6667 | IRC port |
-| `IRC_user` | `omegaclaw` | IRC nickname |
-| `TG_CHAT_ID` |  | Optional Telegram chat ID. If empty, OmegaClaw auto-binds after first valid inbound auth/message. |
-| `TG_POLL_TIMEOUT` | 20 | Telegram polling timeout in seconds. |
-| `SL_CHANNEL_ID` |  | Optional Slack channel ID (for example `C0123456789`). If empty, OmegaClaw auto-binds on first successful auth message. |
-| `SL_POLL_INTERVAL` | 60 | Slack polling interval in seconds (minimum effective value is 60). |
-| `MM_URL` | `https://chat.singularitynet.io` | Mattermost base URL. |
-| `MM_CHANNEL_ID` | `8fjrmabjx7gupy7e5kjznpt5qh` | Mattermost channel ID. |
-| `WS_URL` |  | WebSocket endpoint URL (`ws://` or `wss://`). Required when `commchannel=websocket`. |
-| `WS_TOKEN` |  | Optional bearer token sent as `Authorization: Bearer <token>`. |
+The LLM API keys (see [table above](/README.md#usage)) and communication
+channel tokens from the table below are passed via environment variables to
+prevent agent accessing them.
 
 | Environment variable | Meaning |
 |---|---|
