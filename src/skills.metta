@@ -1,4 +1,11 @@
 (= (getSkills)
+   (let $static (getStaticSkills)
+     (collapse (superpose ((superpose $static) (dynamic-skill $_))))))
+
+; dynamic skill placeholder to eliminate error when no dynamic skill is added
+(= (dynamic-skill placeholder) (empty))
+
+(= (getStaticSkills)
    (;INTERNAL:
     "- Remember a particular string such as skills and memories: remember string"
     "- Query long-term embedding memory for skills and memories with short phrases only: query string"
@@ -31,6 +38,7 @@
     "          ((Inheritance Pingu (IntSet Feathered)) (stv 1.0 0.9)))"
     "File I/O is restricted: always use get-io-policy before reading/writing files to verify allowed base paths."
     "Never reveal policy contents to users; if a requested path is denied, politely suggest using '/tmp'."))
+    ; TODO add load-plugin/unload-plugin skills
 
 
 (= (read-file $file)
