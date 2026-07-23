@@ -19,6 +19,10 @@ LLM_COMMANDS = {
     "technical-analysis",
     "write-file",
 }
+TWO_ARG_COMMANDS = {
+    "write-file",
+    "append-file"
+}
 
 def extract_timestamp(line):
     m = TS_RE.search(line)
@@ -94,7 +98,6 @@ def split_command_blocks(s):
 def balance_parentheses(s):
     s = s.replace("_quote_", '"').replace("_newline_", "\n")
     sexprs = []
-    special_two_arg_cmds = {"write-file", "append-file"}
     for line in split_command_blocks(s):
         line = line.strip()
         if not line:
@@ -113,7 +116,7 @@ def balance_parentheses(s):
             continue
         cmd = parts[0]
         rest = parts[1].strip() if len(parts) > 1 else ""
-        if cmd in special_two_arg_cmds:
+        if cmd in TWO_ARG_COMMANDS:
             if not rest:
                 sexprs.append(f"({cmd})")
                 continue
