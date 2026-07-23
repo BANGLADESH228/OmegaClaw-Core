@@ -20,6 +20,49 @@ embeddingprovider: Local
 
 # policy
 securityPolicyPath: "./repos/OmegaClaw-Core/profile/policy.yaml"
+#GATEWAY_URL:
 
 # channels
 commchannel: irc
+
+# IRC
+IRC_channel: "##omegaclaw"
+IRC_server: "irc.quakenet.org"
+IRC_port: 6667
+IRC_user: "omegaclaw"
+
+# Mattermost
+MM_URL: "https://chat.singularitynet.io"
+MM_CHANNEL_ID: "8fjrmabjx7gupy7e5kjznpt5qh"
+
+# Slack
+SL_CHANNEL_ID: ""
+SL_POLL_INTERVAL: 60
+
+# Telegram
+TG_CHAT_ID: ""
+TG_POLL_TIMEOUT: 20
+
+# WSchat
+WS_URL: ""
+WS_TOKEN: ""
+
+# providers
+#model: # default value depends on provider
+
+# OpenAIAPI
+api_token_var: "OPENAIAPI_API_KEY"
+openaiapi_url: "http://localhost:11434/v1/"
+
+# OpenRouter
+#OPENROUTER_SESSION_ID:
+OPENROUTER_CACHE_TTL: 5m
+
+# OpenAI
+#OPENAI_PROMPT_CACHE_KEY:
+
+# skills
+
+# agentverse
+TECHNICAL_ANALYSIS_AGENT_ADDRESS: "agent1q085746wlr3u2uh4fmwqplude8e0w6fhrmqgsnlp49weawef3ahlutypvu6"
+TAVILY_SEARCH_AGENT_ADDRESS: "agent1qt5uffgp0l3h9mqed8zh8vy5vs374jl2f8y0mjjvqm44axqseejqzmzx9v8"

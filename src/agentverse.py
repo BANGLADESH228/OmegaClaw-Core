@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from config import config_get_by_key
 from typing import Any
 
 from uagents import Model
@@ -10,11 +11,11 @@ from src.logger import get_logger
 
 logger = get_logger(__name__)
 
-TECHNICAL_ANALYSIS_AGENT_ADDRESS = os.environ.get(
+TECHNICAL_ANALYSIS_AGENT_ADDRESS = config_get_by_key(
     "TECHNICAL_ANALYSIS_AGENT_ADDRESS",
     "agent1q085746wlr3u2uh4fmwqplude8e0w6fhrmqgsnlp49weawef3ahlutypvu6",
 )
-TAVILY_SEARCH_AGENT_ADDRESS = os.environ.get(
+TAVILY_SEARCH_AGENT_ADDRESS = config_get_by_key(
     "TAVILY_SEARCH_AGENT_ADDRESS",
     "agent1qt5uffgp0l3h9mqed8zh8vy5vs374jl2f8y0mjjvqm44axqseejqzmzx9v8",
 )

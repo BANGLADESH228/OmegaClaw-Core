@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 import lib_llm_ext as llm
 import providers
 from src.logger import get_logger
+from config import config_get_by_key
 
 logger = get_logger(__name__)
 
@@ -28,7 +29,7 @@ class OpenRouterProviderImpl(llm.AIProvider):
 
     def _create_client(self) -> Optional[openai.OpenAI]:
         """Create OpenRouter client from environment."""
-        proxy_url = os.environ.get("GATEWAY_URL")
+        proxy_url = config_get_by_key("GATEWAY_URL")
         if proxy_url:
             base_url = f"{proxy_url.rstrip('/')}/openrouter/"
             logger.info(f"[OpenRouterProviderImpl._create_client]: Connecting via proxy: {base_url}")
@@ -53,7 +54,7 @@ class OpenRouterProviderImpl(llm.AIProvider):
 
         # Helps OpenRouter sticky-route requests for better cache locality.
         # Keep this stable per agent/session.
-        session_id = os.environ.get("OPENROUTER_SESSION_ID")
+        session_id = config_get_by_key("OPENROUTER_SESSION_ID")
         if not session_id and sysmsg:
             session_id = llm._stable_cache_key("openrouter", self._model_name, sysmsg)
 
@@ -66,7 +67,7 @@ class OpenRouterProviderImpl(llm.AIProvider):
         if model.startswith("anthropic/"):
             body["cache_control"] = {
                 "type": "ephemeral",
-                "ttl": os.environ.get("OPENROUTER_CACHE_TTL", "5m"),
+                "ttl": config_get_by_key("OPENROUTER_CACHE_TTL", "5m"),
             }
 
         return body

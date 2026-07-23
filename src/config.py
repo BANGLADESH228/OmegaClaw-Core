@@ -25,7 +25,7 @@ def init_config(command_line):
     except:
         logger.exception(f"Could not load configuration file {config_path}")
 
-def config_get_by_key(key, default):
+def config_get_by_key(key, default=None):
     global _CONFIG, _COMMAND_LINE, _CONFIG_FILE
     if key in _CONFIG:
         return _CONFIG.get(key)
