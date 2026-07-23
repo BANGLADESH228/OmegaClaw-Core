@@ -1,7 +1,6 @@
-import pluginapi
-import plugin
+import channels
 
-class TestCommChannel(pluginapi.CommChannel):
+class TestCommChannel(channels.CommChannel):
 
     passed_config = None
 
@@ -20,8 +19,8 @@ class TestCommChannel(pluginapi.CommChannel):
 
 def test_commchannel_config():
     channel = TestCommChannel()
-    pluginapi.registerCommChannel("Test", channel)
+    channels.registerCommChannel("Test", channel)
     config = { "test_param": "test_value" }
-    plugin.commChannelConfig("Test", config)
+    channels.commChannelConfig("Test", config)
     assert channel.passed_config == config
 

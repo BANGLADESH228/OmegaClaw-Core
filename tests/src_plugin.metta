@@ -2,7 +2,6 @@
 !(import! &self ./src/utils)
 !(import! &self ../src/logger.py)
 !(import! &self ./src/log)
-!(import! &self ./src/pluginapi)
 !(import! &self ./src/plugin)
 
 !(initLogger)

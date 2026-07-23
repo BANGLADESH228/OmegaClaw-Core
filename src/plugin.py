@@ -8,7 +8,6 @@ import pathlib
 import yaml
 import importlib
 import importlib.util
-import pluginapi
 import sys
 import logging
 
@@ -17,8 +16,6 @@ logger = logging.getLogger(__name__)
 _LOADERS = ["python", "metta"]
 _REPO = pathlib.Path(__file__).parent.parent.resolve()
 _plugins = {}
-_commchannel: pluginapi.CommChannel = None
-_llmprovider: pluginapi.LLMProvider = None
 
 def _error(func, text):
     error = f"{func}: {text}"
@@ -112,35 +109,3 @@ def commandLineToDict(list):
         else:
             dict[kv[0]] = True
     return dict
-
-def commChannelConfig(commchannel, config):
-    """Select and configure one of the communication channels registered by
-    plugins"""
-    global _commchannel
-    _commchannel = pluginapi._commChannelRegistry.get(commchannel, None)
-    if _commchannel is None:
-        _error("commChannelConfig", f"Communication channel plugin {commchannel} is not registered")
-    _commchannel.config(config)
-
-def commChannelReceive():
-    """Receive message from selected communication channel"""
-    global _commchannel
-    return _commchannel.receive()
-
-def commChannelSend(message):
-    """Send message via selected communication channel"""
-    global _commchannel
-    _commchannel.send(message)
-
-def llmProviderConfig(provider, config):
-    """Select and configure one of the LLM providers registered by plugins"""
-    global _llmprovider
-    _llmprovider = pluginapi._llmProviderRegistry.get(provider, None)
-    if _llmprovider is None:
-        _error("llmProviderConfig", f"LLM provider plugin {provider} is not registered")
-    _llmprovider.config(config)
-
-def llmProviderChat(prompt, max_tokens, reasoning_mode):
-    """Chat via selected LLM provider"""
-    global _llmprovider
-    return _llmprovider.chat(prompt, max_tokens, reasoning_mode)
