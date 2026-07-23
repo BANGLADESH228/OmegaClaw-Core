@@ -86,7 +86,6 @@
                              "Reply to continue.")))
               (appendToHistory  ((get_time_as_string) (newline) (strings-concat ("RESEARCH_ACTIVE: " $research-name
                             " STATUS: WAITING_FOR_USER"
-                            " DO_NOT_PROCEED"
                             ))  (newline)))
               "Waiting for user")
         (send (strings-concat ("Invalid name: " $research-name ". Only a-z, 0-9, - and _ allowed.")))

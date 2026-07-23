@@ -54,14 +54,16 @@
                      (progn
                        (add-prompt-extension workflow_active_instructions (active-instructions $content))
                        (add-workflow-skills $name)
-                       (appendToHistory  ((get_time_as_string) (newline)
-                            (strings-concat ("Loaded workflow: " $name
-                                     ". Instructions active in context until completion.")) (newline)))
-                       (strings-concat ("Instructions loaded: " $name))))))))
+                       (send (strings-concat ("Loaded workflow: " $name
+                                     ". Instructions active in context until completion.")))
+                        (appendToHistory  ((get_time_as_string) (newline)
+                            (strings-concat ("Workflow skills loaded: " $name)) (newline)))
+                       ))))))
 
 (= (workflow-unload-instructions)
    (progn (remove-prompt-extension workflow_active_instructions)
           (unload-workflow-skills)
+          (send (strings-concat ("Unloaded workflow: " $name)))
           (appendToHistory  ((get_time_as_string) (newline)
                (strings-concat ("Workflow skills unloaded: " $name)) (newline)))
           ))
