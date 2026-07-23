@@ -5,6 +5,10 @@ import threading
 import time
 import textwrap
 import auth
+from src.logger import get_logger
+import pluginapi as plugin
+
+logger = get_logger(__name__)
 
 _running = False
 _sock = None
@@ -63,23 +67,23 @@ def _is_allowed_message(nick, msg):
             return "allow"
         if _authenticated_nick is not None:
             return "allow" if norm_nick == _authenticated_nick else "ignore"
-        if not _is_auth_command(msg):
-            return "ignore"
         candidate = _parse_auth_candidate(msg)
-        if auth.verify_token(candidate):
+        user_id_check = auth.authenticate_channel_user('IRC', norm_nick, candidate)
+        if user_id_check in ["auth_bound", "allow"]:
             _authenticated_nick = norm_nick
-            return "auth_bound"
-        return "ignore"
+            return user_id_check
+        else:
+            return "ignore"
 
 def _irc_loop(channel, server, port, nick):
     global _running, _sock, _connected
-    print(f"[IRC] Connecting to {server}:{port} as {nick} for channel {channel}")
+    logger.info(f"Connecting to {server}:{port} as {nick} for channel {channel}")
     try:
         sock = socket.create_connection((server, int(port)), timeout=15)
         sock.settimeout(60)
-        print("[IRC] TCP connected")
+        logger.info("TCP connected")
     except OSError as e:
-        print(f"[IRC] Connect failed: {e}")
+        logger.exception(f"Connect failed: {e}")
         return
     _sock = sock
     _send(f"NICK {nick}")
@@ -92,8 +96,10 @@ def _irc_loop(channel, server, port, nick):
             if not data:
                 break
         except socket.timeout:
+            logger.debug("IRC receive timed out, polling again")
             continue
-        except OSError:
+        except OSError as e:
+            logger.exception(f"IRC socket error, stopping receive loop: {e}")
             break
         read_buffer += data
         while "\r\n" in read_buffer:
@@ -105,12 +111,12 @@ def _irc_loop(channel, server, port, nick):
             parts = line.split()
             if len(parts) > 1 and parts[1] == "001":
                 _connected = True
-                print(f"[IRC] Registered. Joining {_channel}")
+                logger.info(f"Registered. Joining {_channel}")
                 _send(f"JOIN {_channel}")
             elif len(parts) > 1 and parts[1] in {"403", "405", "471", "473", "474", "475"}:
-                print(f"[IRC] Join failed: {line}")
+                logger.error(f"Join failed: {line}")
             elif len(parts) > 1 and parts[1] == "433":
-                print(f"[IRC] Nickname in use: {line}")
+                logger.error(f"Nickname in use: {line}")
             elif line.startswith(":") and " PRIVMSG " in line:
                 try:
                     prefix, trailing = line[1:].split(" PRIVMSG ", 1)
@@ -126,12 +132,12 @@ def _irc_loop(channel, server, port, nick):
                     elif state == "auth_bound":
                         _send(f"PRIVMSG {_channel} :Authentication successful for {nick}.")
                 except Exception as e:
-                    print(f"[IRC]: exception caught {repr(e)}")
+                    logger.exception(f"Exception caught {repr(e)}")
     _connected = False
     with _sock_lock:
         _sock = None
     sock.close()
-    print("[IRC] Disconnected")
+    logger.info("Disconnected")
 
 def start_irc(channel, server="irc.libera.chat", port=6667, nick="omegaclaw"):
     global _running, _channel, _connected
@@ -160,4 +166,25 @@ def send_message(text):
             if _connected and _channel:
                  _send(f"PRIVMSG {_channel} :{chunk}")
         except Exception as e:
-            print(f"[IRC] error in send_message on channel {_channel}: {e}")
+            logger.exception(f"Error in send_message on channel {_channel}: {e}")
+
+class IRCChannel(plugin.CommChannel):
+
+    def __init__(self):
+        super().__init__()
+
+    def config(self, config: dict) -> None:
+        channel = config.get("IRC_channel", "##omegaclaw")
+        server = config.get("IRC_server", "irc.quakenet.org")
+        port = int(config.get("IRC_port", 6667))
+        user = config.get("IRC_user", "omegaclaw")
+        start_irc(channel, server, port, user)
+
+    def receive(self) -> str:
+        return getLastMessage()
+
+    def send(self, message: str) -> None:
+        send_message(message)
+
+def loadOmegaClawPlugin():
+    plugin.registerCommChannel("irc", IRCChannel())

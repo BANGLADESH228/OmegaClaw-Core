@@ -32,9 +32,14 @@ of approximately 200 lines of code.
 
 ## Installation
 
-Prerequisites: Git, Python3, Pip and [venv](https://docs.python.org/3/library/venv.html) library
+Prerequisites: Git, Python 3.10 or later including dev headers, Pip and [venv](https://docs.python.org/3/library/venv.html) library, C compiler (for building [janus-swi](https://pypi.org/project/janus-swi/) library)
 
-Get [SWI-Prolog 9.1.12 or later](https://www.swi-prolog.org/).
+Under Ubuntu one can use the following command to install prerequisites:
+```
+sudo apt-get install git python3 python3-dev python3-pip python3-venv build-essential
+```
+
+Get [SWI-Prolog 10.0.2 or later](https://www.swi-prolog.org/).
 
 Install OmegaClaw:
 ```
@@ -67,14 +72,29 @@ python3 -m pip install -r ./repos/OmegaClaw-Core/requirements.txt
 
 Ensure that you have [Docker installed](https://docs.docker.com/engine/install/)
 
-Run OmegaClaw using next command:
+Run OmegaClaw using the next command:
 ```
 curl -fsSL https://raw.githubusercontent.com/asi-alliance/OmegaClaw-Core/refs/heads/main/scripts/omegaclaw | bash -s -- singularitynet/omegaclaw:latest
 ```
 
-To run specific version of OmegaClaw set version in `TAG` environment variable and run the following command:
+To run a specific version of OmegaClaw set version in `TAG` environment variable and run the following command:
 ```
-export TAG=v0.1.15; curl -fsSL  https://github.com/asi-alliance/OmegaClaw-Core/raw/refs/tags/$TAG/scripts/omegaclaw | bash -s -- singularitynet/omegaclaw:$TAG
+export TAG=v0.1.17; curl -fsSL  https://github.com/asi-alliance/OmegaClaw-Core/raw/refs/tags/$TAG/scripts/omegaclaw | bash -s -- singularitynet/omegaclaw:$TAG
+```
+
+To stop the OmegaClaw Docker container:
+```
+docker stop omegaclaw
+```
+
+To restart the OmegaClaw Docker container:
+```
+docker start omegaclaw
+```
+
+To reset OmegaClaw's memory:
+```
+docker volume rm omegaclaw-memory
 ```
 
 ---
@@ -88,9 +108,8 @@ Before running the system you need to choose your LLM API provider and export th
 | `OpenAI` | `OPENAI_API_KEY` | GPT models. Also reused by the OpenAI embedding provider below. |
 | `ASICloud` | `ASI_API_KEY` |  MiniMax models via ASI Alliance inference endpoint (`inference.asicloud.cudos.org`). |
 | `ASIOne` | `ASIONE_API_KEY` |  ASI1 Ultra model via ASI:One inference endpoint (`https://api.asi1.ai/v1`). |
-| `Ollama-local` | `OLLAMA_API_KEY` |  Ollama model via local inference endpoint. API endpoint is set via `LLM_SERVER_LOCAL_URL` environment variables. |
+| `OpenAIAPI` | `OPENAIAPI_API_KEY` |  Use OpenAI API with any endpoint and model. API endpoint and model are set via `openaiapi_url` and `model` command line parameters. |
 | `OpenRouter` | `OPENROUTER_API_KEY` |  GLM model via OpenRouter inference endpoint. |
-| `MiniMaxM3` | `OPENROUTER_API_KEY` |  MiniMax M3 model via OpenRouter inference endpoint. |
 
 Run the system via the following command which ensures the system is started from the root folder of PeTTa:
 ```
@@ -124,6 +143,8 @@ If you want to skip preloading the knowledge then run `export IMPORT_KB_ON_START
 | `wakeupInterval` | 600 | How long idle before the next scheduled wake-up (seconds) |
 | `LLM` | `gpt-5.4` | Model identifier passed to the provider (used with OpenAI provider only) |
 | `provider` | `Anthropic` | LLM provider, see the table of the providers above |
+| `model` | provider specific | LLM model to use, depends on provider |
+| `openaiapi_url` | http://localhost:11434/v1 | LLM endpoint URL. Only used by `OpenAIAPI` provider. |
 | `maxOutputToken` | 6000 | Output cap passed to the provider |
 | `reasoningMode` | `medium` | Reasoning-effort hint passed to the provider (OpenAI only) |
 | `securityPolicyPath` | ./repos/OmegaClaw-Core/profile/policy.yaml | Path to the security profile written using [OpenShell YAML](https://docs.nvidia.com/openshell/reference/policy-schema#filesystem-policy). See [./profile/policy.yaml](./profile/policy.yaml) as an example. Empty value disables restrictions. |
@@ -142,7 +163,7 @@ If you want to skip preloading the knowledge then run `export IMPORT_KB_ON_START
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `commchannel` | `irc` | Type of the communication channel for agent to use - `irc`, `telegram`, `mattermost` or `slack` |
+| `commchannel` | `irc` | Type of the communication channel for agent to use - `irc`, `telegram`, `mattermost`, `slack` or `websocket` |
 | `IRC_channel` | `##omegaclaw` | IRC channel to join |
 | `IRC_server` | `irc.quakenet.org` | IRC server hostname |
 | `IRC_port` | 6667 | IRC port |
@@ -153,6 +174,8 @@ If you want to skip preloading the knowledge then run `export IMPORT_KB_ON_START
 | `SL_POLL_INTERVAL` | 60 | Slack polling interval in seconds (minimum effective value is 60). |
 | `MM_URL` | `https://chat.singularitynet.io` | Mattermost base URL. |
 | `MM_CHANNEL_ID` | `8fjrmabjx7gupy7e5kjznpt5qh` | Mattermost channel ID. |
+| `WS_URL` |  | WebSocket endpoint URL (`ws://` or `wss://`). Required when `commchannel=websocket`. |
+| `WS_TOKEN` |  | Optional bearer token sent as `Authorization: Bearer <token>`. |
 
 | Environment variable | Meaning |
 |---|---|

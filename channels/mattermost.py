@@ -6,6 +6,10 @@ import time
 import requests
 import websocket
 import auth
+from src.logger import get_logger
+import pluginapi as plugin
+
+logger = get_logger(__name__)
 
 _running = False
 _ws = None
@@ -65,13 +69,13 @@ def _is_allowed_message(user_id, msg):
             return "allow"
         if _authenticated_user_id is not None:
             return "allow" if user_id == _authenticated_user_id else "ignore"
-        if not _is_auth_command(msg):
-            return "ignore"
         candidate = _parse_auth_candidate(msg)
-        if auth.verify_token(candidate):
+        user_id_check = auth.authenticate_channel_user('MATTERMOST', user_id, candidate)
+        if user_id_check in ["auth_bound", "allow"]:
             _authenticated_user_id = user_id
-            return "auth_bound"
-        return "ignore"
+            return user_id_check
+        else:
+            return "ignore"
 
 def _get_display_name(user_id):
     r = requests.get(
@@ -127,8 +131,10 @@ def _ws_loop():
                         send_message(f"Authentication successful for {name}.")
 
         except websocket.WebSocketTimeoutException:
+            logger.debug("Mattermost websocket receive timed out, polling again")
             continue
-        except Exception:
+        except Exception as e:
+            logger.exception(f"WebSocket error: {e}")
             break
 
     ws.close()
@@ -167,3 +173,23 @@ def send_message(text):
         headers=_headers,
         json={"channel_id": CHANNEL_ID, "message": text}
     )
+
+class MattermostChannel(plugin.CommChannel):
+
+    def __init__(self):
+        super().__init__()
+
+    def config(self, config: dict) -> None:
+        global MM_URL, CHANNEL_ID
+        url = config.get("MM_URL", MM_URL)
+        channel = config.get("MM_CHANNEL_ID", CHANNEL_ID)
+        start_mattermost(url, channel_id)
+
+    def receive(self) -> str:
+        return getLastMessage()
+
+    def send(self, message: str) -> None:
+        send_message(message)
+
+def loadOmegaClawPlugin():
+    plugin.registerCommChannel("mattermost", MattermostChannel())

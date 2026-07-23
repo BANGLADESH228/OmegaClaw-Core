@@ -3,6 +3,13 @@ import json
 import re
 from datetime import datetime
 
+try:
+    from src.logger import get_logger
+except ModuleNotFoundError:  # running this file directly as a script
+    from logger import get_logger
+
+logger = get_logger(__name__)
+
 TS_RE = re.compile(r'^\("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})"')
 LLM_COMMANDS = {
     "append-file",
@@ -18,6 +25,7 @@ LLM_COMMANDS = {
     "tavily-search",
     "technical-analysis",
     "write-file",
+    "get-io-policy"
 }
 TWO_ARG_COMMANDS = {
     "write-file",
@@ -30,7 +38,8 @@ def extract_timestamp(line):
         return None
     try:
         return datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
-    except ValueError:
+    except ValueError as e:
+        logger.error(f"Line does not carry a parsable timestamp: {e}")
         return None
 
 def around_time(needle_time_str, k):
@@ -162,7 +171,8 @@ def normalize_string(x):
         if isinstance(x, bytes):
             return x.decode("utf-8", errors="ignore")
         return str(x).encode("utf-8", errors="ignore").decode("utf-8", errors="ignore")
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Could not normalize value, using its plain string form: {e}")
         return str(x)
 
 def test_balance_parenthesis():
