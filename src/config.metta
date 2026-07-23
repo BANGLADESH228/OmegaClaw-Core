@@ -13,6 +13,7 @@
      (add-atom &self (= ($key) $value))))
 
 ; Get configuration parameter from the list of sources: (1) command line
-; parameters, (2) configuration file, (3) use $default value.
+; parameters, (2) environment variable with OMEGACLAW_$key name, (3)
+; configuration file, (4) use $default value.
 (= (configGetByKey $key $default)
    (py-call (config.config_get_by_key $key $default)))
