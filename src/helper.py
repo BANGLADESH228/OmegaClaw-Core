@@ -115,9 +115,9 @@ def balance_parentheses(s):
         if not line:
             continue
         if line.startswith("(-"):
-            line = "(pin -" + line[2:]
+            line = "(pin " + line[2:]
         elif line.startswith("-"):
-            line = "pin " + line
+            line = "pin " + line[1:]
         # remove one outer (...) if present
         if line.startswith("(") and line.endswith(")"):
             line = line[1:-1].strip()
@@ -199,6 +199,10 @@ def test_balance_parenthesis():
     assert balance_parentheses('   ') == '()'
     assert balance_parentheses('()\nsend hello') == '((send "hello"))'
     assert balance_parentheses('write-file "test.txt" hello\nworld') == '((write-file "test.txt" "hello\\nworld"))'
+    assert balance_parentheses('- Found a bug') == '((pin "Found a bug"))'
+    assert balance_parentheses('(- Found a bug)') == '((pin "Found a bug"))'
+    assert balance_parentheses('- Found\na\nbug') == '((pin "Found\\na\\nbug"))'
+    assert balance_parentheses('(- Found a bug') == '((pin "Found a bug"))'
 
 if __name__ == "__main__":
     test_balance_parenthesis()
