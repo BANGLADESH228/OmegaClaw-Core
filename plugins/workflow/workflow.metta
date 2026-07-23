@@ -54,17 +54,18 @@
                      (progn
                        (add-prompt-extension workflow_active_instructions (active-instructions $content))
                        (add-workflow-skills $name)
-                       (pin (strings-concat ("ACTIVE_WORKFLOW: " $name
-                                     " STATUS: starting"
-                                     " NEXT: follow workflow instructions")))
                        (send (strings-concat ("Loaded workflow: " $name
                                      ". Instructions active in context until completion.")))
-                       (strings-concat ("Instructions loaded: " $name))))))))
+                        (appendToHistory  ((get_time_as_string) (newline)
+                            (strings-concat ("Workflow skills loaded: " $name)) (newline)))
+                       ))))))
 
 (= (workflow-unload-instructions)
    (progn (remove-prompt-extension workflow_active_instructions)
           (unload-workflow-skills)
-          (pin "No active workflow. Workflow skills cleared.")
+          (send (strings-concat ("Unloaded workflow: " $name)))
+          (appendToHistory  ((get_time_as_string) (newline)
+               (strings-concat ("Workflow skills unloaded: " $name)) (newline)))
           ))
 
 (= (active-instructions $content)
@@ -79,7 +80,8 @@
             (progn
               (import! &workflow_skills $path)
               (collapse (match &workflow_skills (skill $func $desc $args) (add-skill $func $desc $args)))
-              (pin (strings-concat ("Workflow skills loaded: " $name))))))
+              (strings-concat ("Workflow skills loaded: " $name))
+              )))
 
 ; to load skills descriptions
 (= (unload-workflow-skills)
