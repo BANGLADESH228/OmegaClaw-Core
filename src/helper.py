@@ -59,11 +59,6 @@ def around_time(needle_time_str, k):
         ret += f"{lineno}:{line}"
     return ret
 
-def _strip_outer_parens(line):
-    if line.startswith("(") and line.endswith(")"):
-        return line[1:-1].strip()
-    return line
-
 def quote_arg(x):
     return json.dumps(x, ensure_ascii=False)
 
