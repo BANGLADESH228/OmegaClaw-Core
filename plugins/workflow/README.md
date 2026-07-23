@@ -44,7 +44,7 @@ when workflow is active and additional MeTTa functions which are mentioned in
 Skill description are added as high-level expressions. Each such expression
 adds one skill to the OmegaClaw. First atom of the expression is `skill` symbol
 and other atoms are parameters of the `add-skill` function. See
-[pluginapi.metta](/src/pluginapi.metta) for details. Skill implementations are
+[skills.metta](/src/skills.metta) for details. Skill implementations are
 added as MeTTa functions.
 
 For example:

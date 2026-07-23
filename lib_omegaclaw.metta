@@ -11,7 +11,6 @@
 !(import! &self (library OmegaClaw-Core ./src/logger.py))
 !(import! &self (library OmegaClaw-Core ./src/log))
 !(import! &self (library OmegaClaw-Core ./src/plugin))
-!(import! &self (library OmegaClaw-Core ./src/pluginapi))
 !(import! &self (library OmegaClaw-Core ./src/agentverse.py))
 !(import! &self (library OmegaClaw-Core ./src/channels))
 !(import! &self (library OmegaClaw-Core ./profile/policy))

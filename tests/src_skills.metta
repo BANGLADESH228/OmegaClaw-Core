@@ -1,6 +1,5 @@
 !(import! &self ./tests/lib/utils)
 !(import! &self ./src/utils)
-!(import! &self ./src/pluginapi)
 !(import! &self ./src/skills)
 !(import! &self ./src/loop)
 
