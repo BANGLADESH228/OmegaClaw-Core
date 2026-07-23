@@ -7,4 +7,7 @@
 
 ; Check whether $part string is contained inside $text string
 (= (contains-text $full $part)
-   (py-call (.__contains__ $full $part)))
+   (if (== 1 (py-call (int (py-call (.__contains__ $full $part)))))
+     True
+     False))
+
