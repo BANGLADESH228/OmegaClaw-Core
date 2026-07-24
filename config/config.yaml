@@ -127,3 +127,14 @@ asione_model: "asi1-ultra"
 TECHNICAL_ANALYSIS_AGENT_ADDRESS: "agent1q085746wlr3u2uh4fmwqplude8e0w6fhrmqgsnlp49weawef3ahlutypvu6"
 # AgentVerse address of the Tavily search agent
 TAVILY_SEARCH_AGENT_ADDRESS: "agent1qt5uffgp0l3h9mqed8zh8vy5vs374jl2f8y0mjjvqm44axqseejqzmzx9v8"
+
+# Plugins
+
+# Workflow
+# Path to the directory which contains available workflows. Default value is
+# <project_root>/plugins/workflow/instructions. See plugins/workflow/README.md
+# for details.
+#pluginWorkflowInstructionsDir: ./plugins/workflow/instructions
+# Path to the directory to keep workflow working files when workflow is active.
+# Default value is <memoryDirectory>/workflow_space
+#pluginWorkflowMemoryDir: ./memory/workflow_space
