@@ -133,21 +133,21 @@ If you want to skip preloading the knowledge then run `export IMPORT_KB_ON_START
 
 ## Configuration Options
 
-There are the following sources of the configuration parameters for the
+These are the following sources of the configuration parameters for the
 OmegaClaw agent:
 - command line parameters
 - environment variables
 - configuration file
 
-OmegaClaw looks for the parameter in each of the locations. Command line
-parameter overrides environment variable which in turn overrides configuration
-file value. Environment variable should have name `OMEGACLAW_<parameter>` in
+OmegaClaw looks for parameters in each of the locations. Command line
+parameters override environment variables which in turn override configuration
+file values. Environment variables should be named `OMEGACLAW_<parameter>` in
 order to separate them from other variables. For example to override the
-default LLM model one can set `OMEGACLAW_model` environment variable. The full
+default LLM model one can set an `OMEGACLAW_model` environment variable. The full
 list of parameters with descriptions and default values can be found in
 [default configuration file](/config/config.yaml).
 
-Configuration file location can be specified manually using `config` option:
+The configuration file location can be specified manually using `config` option:
 ```sh
 sh run.sh run.metta config=<config.yaml path>
 ```
