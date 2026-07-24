@@ -15,20 +15,25 @@ agent and their output is observed on the test comm channel.
                   skill is registered and executed.
   - unload:       load test-workflow, unload it, then confirm the
                   workflow-only skill no longer runs.
-  - second workflow: load research-workflow, showing the loader is driven by
-                  the MarkDown workflows on disk rather than a single hard-coded
-                  one.
+  - research-workflow: load research-workflow and run its research-start
+                  skill; the confirmation on the channel and the project tree
+                  written under the memory volume prove a second MarkDown
+                  workflow works end to end.
 
 Run:
     pytest test_workflow_plugin_mock.py -s
 """
 import time
 
-from helpers import Checker, make_prompt
+from helpers import Checker, dexec, make_prompt
 
 WORKFLOW = "test-workflow"
 WORKFLOW_SKILL = "test-skill"
 DEMO_MESSAGE = "This is a test workflow demonstration"
+
+RESEARCH_WORKFLOW = "research-workflow"
+RESEARCH_DIR = "/PeTTa/repos/OmegaClaw-Core/memory/workflow_space/research"
+RESEARCH_NAME = "qa-research-autotest"
 
 
 def _flush(comm):
@@ -145,22 +150,52 @@ class TestWorkflowPlugin:
 
             c.done()
 
-    def test_load_second_workflow(self, llm, comm):
-        with Checker("workflow load research-workflow (mock)") as c:
-            print(f"\n=== OmegaClaw: load research-workflow (run-id {c.run_id}) ===",
+    def test_research_workflow(self, llm, comm):
+        project = f"{RESEARCH_DIR}/{RESEARCH_NAME}"
+        with Checker("research-workflow start (mock)", cleanup_dirs=[project]) as c:
+            print(f"\n=== OmegaClaw: research-workflow (run-id {c.run_id}) ===",
                   flush=True)
             c.add_cleanup_marker(str(c.run_id))
+            c.add_cleanup_marker(str(c.run_id + 1))
             _flush(comm)
 
-            other = "research-workflow"
-            c.step(f"load {other}")
-            prompt = make_prompt(c.run_id, f"Load the {other} instructions.")
-            llm.set_answer(prompt, f'(workflow-load-instructions "{other}")')
-            if not comm.send_message(prompt):
-                c.fail("comm", "could not deliver prompt within 60s")
-            loaded = _recv_contains(comm, f"Loaded workflow: {other}", timeout=60)
-            if loaded is None:
-                c.fail("second workflow loaded", f"agent never confirmed loading {other}")
-            c.ok("second workflow loaded", f"{loaded[:80]!r}")
+            c.step("turn 1: load research-workflow")
+            prompt1 = make_prompt(c.run_id, f"Load the {RESEARCH_WORKFLOW} instructions.")
+            llm.set_answer(prompt1, f'(workflow-load-instructions "{RESEARCH_WORKFLOW}")')
+            if not comm.send_message(prompt1):
+                c.fail("comm-1", "could not deliver turn 1 prompt within 60s")
+            if _recv_contains(comm, f"Loaded workflow: {RESEARCH_WORKFLOW}", timeout=60) is None:
+                c.fail("workflow loaded", f"{RESEARCH_WORKFLOW} was not loaded")
+            c.ok("workflow loaded", RESEARCH_WORKFLOW)
+
+            c.step("turn 2: research-start creates the project")
+            start_id = c.run_id + 1
+            topic = f"iris via mock {c.run_id}"
+            time.sleep(5)
+            prompt2 = make_prompt(start_id, "Start the research project.")
+            llm.set_answer(prompt2, f'(research-start "{RESEARCH_NAME}" "{topic}")')
+            if not comm.send_message(prompt2):
+                c.fail("comm-2", "could not deliver turn 2 prompt within 60s")
+            created = _recv_contains(comm, "Created project:", timeout=60)
+            if created is None:
+                c.fail("research-start ran", "research-start did not confirm creation")
+            c.ok("research-start ran", f"{created[:80]!r}")
+
+            c.step("verify the project tree and topic.txt exist on disk")
+            got = None
+            deadline = time.time() + 20
+            while time.time() < deadline:
+                res = dexec("cat", f"{project}/topic.txt")
+                if res.returncode == 0 and res.stdout.strip() == topic:
+                    got = res.stdout.strip()
+                    break
+                time.sleep(1)
+            if got is None:
+                c.fail("topic.txt", f"{project}/topic.txt missing or wrong content")
+            c.ok("topic.txt", f"{got!r}")
+            for sub in ("src", "data", "runs", "figures"):
+                if dexec("test", "-d", f"{project}/{sub}").returncode != 0:
+                    c.fail("project dirs", f"{sub}/ not created")
+            c.ok("project dirs", "src/ data/ runs/ figures/ present")
 
             c.done()
