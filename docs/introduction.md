@@ -117,7 +117,8 @@ lib_omegaclaw.metta       loads all submodules
 ├── src/memory.metta      long-term memory + history
 ├── src/skills.metta      callable skill surface
 ├── src/channels.metta    receive/send dispatch
-├── src/utils.metta       configure, string ops, time
+├── src/utils.metta       utility, string ops, time
+├── src/config.metta      configure
 ├── src/helper.py         parenthesis balancing, normalization
 ├── src/agentverse.py     remote-agent bridge
 ├── src/skills.pl         Prolog helpers (shell, first_char)
