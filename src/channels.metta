@@ -27,17 +27,3 @@
        (progn (change-state! &lastsend $msg)
               (let $safemsg (string-replace $msg  "\n" "\\n")
                    (let $temp (cut) (commChannelSend $safemsg)))) _))
-
-
-(= (readyToSend)
-    (if (== (commchannel) websocket)
-         (py-call (wschat.is_ready_to_send))
-         (if (== (commchannel) irc)
-              (py-call (irc.is_ready_to_send))
-              (if (== (commchannel) telegram)
-                (py-call (telegram.is_ready_to_send))
-                (if (== (commchannel) slack)
-                     (py-call (slack.is_ready_to_send))
-                     (if (== (commchannel) mattermost)
-                          (py-call (mattermost.is_ready_to_send))
-                          True))))))

@@ -41,8 +41,6 @@ def getLastMessage():
         _last_message = ""
         return tmp
 
-def is_ready_to_send():
-    return "ready" if _connected and _channel else "not-ready"
 
 def _normalize_nick(nick):
     return nick.strip().lower()
@@ -115,9 +113,6 @@ def _irc_loop(channel, server, port, nick):
                 _connected = True
                 logger.info(f"Registered. Joining {_channel}")
                 _send(f"JOIN {_channel}")
-            elif len(parts) > 1 and parts[1] == "366":
-                _connected = True
-                print(f"[IRC] Joined {_channel}")
             elif len(parts) > 1 and parts[1] in {"403", "405", "471", "473", "474", "475"}:
                 logger.error(f"Join failed: {line}")
             elif len(parts) > 1 and parts[1] == "433":

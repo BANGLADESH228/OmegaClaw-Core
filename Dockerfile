@@ -69,6 +69,15 @@ SentenceTransformer(model_name)
 print("Model download complete.")
 PY
 
+FROM builder AS versioned-source
+
+WORKDIR /omegaclaw-source
+COPY . .
+RUN python3 -c 'from src.helper import omegaclaw_version; print(omegaclaw_version())' > /tmp/omegaclaw-version \
+ && mv /tmp/omegaclaw-version ./version \
+ && rm -rf ./.git \
+ && chmod 0444 ./version
+
 FROM ${SWIPL_IMAGE} AS runtime
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -114,14 +123,8 @@ ENV MEMORY_DIR=${OMEGACLAW_DIR}/memory
 # Start defaults for import-kb
 ENV IMPORT_KB_ON_START=0
 
-ARG OMEGACLAW_VERSION=unknown
-
-# Bring in only local OmegaClaw source (filtered by .dockerignore).
-COPY . ${OMEGACLAW_DIR}
-
-RUN mkdir -p /etc/omegaclaw \
- && printf '%s\n' "${OMEGACLAW_VERSION}" > /etc/omegaclaw/version \
- && chmod 0444 /etc/omegaclaw/version
+# Bring in the clean source tree and its version generated from Git metadata.
+COPY --from=versioned-source /omegaclaw-source ${OMEGACLAW_DIR}
 
 RUN cp ${OMEGACLAW_DIR}/run.metta /PeTTa/run.metta \
  && mkdir -p ${MEMORY_DIR}/chroma_db \

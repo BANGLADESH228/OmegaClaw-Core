@@ -22,7 +22,6 @@
           (configure memoryDirectory ./)
           (change-state! &prevmsg "")
           (change-state! &lastresults "")
-          (change-state! &version_sent False)
           (change-state! &loops (maxNewInputLoops))
           ))
 
@@ -71,8 +70,7 @@
                         (change-state! &loops (- (get-state &loops) 1)))
           (let $prompt (getContext)
                (progn (log INFO "loop" (---------iteration $k))
-                      (let* (($_ (if (and (== (readyToSend) ready) (== (get-state &version_sent) False)) (progn ((send (version)) (change-state! &version_sent True))) _))
-                             ($msgrcv (string-safe (repr (receive))))
+                      (let* (($msgrcv (string-safe (repr (receive))))
                              ($msgnew (prog1 (and (> (string_length $msgrcv) 0) (!= $msgrcv (get-state &prevmsg)))
                                              (if (> (string_length $msgrcv) 0) (change-state! &prevmsg $msgrcv) _)))
                              ($msg (get-state &prevmsg))

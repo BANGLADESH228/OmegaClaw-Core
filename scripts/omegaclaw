@@ -461,30 +461,15 @@ start
 }
 
 version() {
-    local version=""
-    local script_dir=""
-    local repo_root=""
-
-    if [[ -r /etc/omegaclaw/version ]]; then
-        IFS= read -r version < /etc/omegaclaw/version || true
-
-        if [[ -n "$version" ]]; then
-            printf 'OmegaClaw %s\n' "$version"
-            return 0
-        fi
-    fi
+    local script_dir
+    local repo_root
 
     script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-    if repo_root="$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null)"; then
-        if version="$(git -C "$repo_root" describe --tags --dirty --always 2>/dev/null)"; then
-            printf "OmegaClaw %s\n" "$version"
-            return 0
-        fi
-    fi
-
-    echo "OmegaClaw unknown"
-    return 1
+    repo_root="$(cd -- "${script_dir}/.." && pwd)"
+    (
+        cd -- "$repo_root"
+        python3 -c 'from src.helper import omegaclaw_version; print(omegaclaw_version())'
+    )
 }
 
 help() {
@@ -508,6 +493,8 @@ help() {
     echo -e "\t-t <channel type> set communication channel type: irc|telegram|slack|websocket|mattermost|test"
     echo -e "\t-d <Docker image> set Docker image name (default omegaclaw:latest)"
     echo -e "\t-l <logging config> set Python logging config file"
+    echo -e "\t--version, -v show the OmegaClaw version"
+    echo -e "\t--help, -h show this help"
 }
 
 options() {

@@ -1,13 +1,11 @@
 import json
-import re
 import os
+import re
 import subprocess
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
-
-import os
+from tempfile import TemporaryDirectory
 
 try:
     from src.logger import get_logger
@@ -186,63 +184,59 @@ def joinPath(parts):
 
 def projectRootDirectory():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-def _candidate_scripts() -> Iterable[Path]:
-    explicit_script = os.environ.get("OMEGACLAW_SCRIPT")
-    if explicit_script:
-        yield Path(explicit_script)
 
-    explicit_dir = os.environ.get("OMEGACLAW_DIR")
-    if explicit_dir:
-        yield Path(explicit_dir) / "scripts" / "omegaclaw"
 
-    yield Path("/PeTTa/repos/OmegaClaw-Core/scripts/omegaclaw")
+def _format_omegaclaw_version(version: str) -> str | None:
+    version = version.strip()
+    if not version:
+        return None
+    if version.startswith("OmegaClaw "):
+        return version
+    return f"OmegaClaw {version}"
+
+
+def omegaclaw_version(repo_root: str | os.PathLike | None = None) -> str:
+    """Return the checkout version, falling back to the baked version file."""
+    root = Path(repo_root) if repo_root is not None else Path(projectRootDirectory())
 
     try:
-        yield Path(__file__).resolve().parents[1] / "scripts" / "omegaclaw"
-    except IndexError:
-        return
-
-
-def _find_omegaclaw_script() -> Path | None:
-    for script in _candidate_scripts():
-        if script.is_file():
-            return script
-    return None
-
-
-def _read_baked_version() -> str | None:
-    version_file = Path("/etc/omegaclaw/version")
-    if version_file.is_file():
-        version = version_file.read_text(encoding="utf-8").strip()
-        if version:
-            return f"OmegaClaw {version}"
-
-    version = os.environ.get("OMEGACLAW_VERSION", "").strip()
-    if version:
-        return f"OmegaClaw {version}"
-
-    return None
-
-def omegaclaw_version() -> str:
-    script = _find_omegaclaw_script()
-
-    if script is not None:
-        try:
-            result = subprocess.run(
-                [str(script), "--version"],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=3,
-            )
-            version = str(result.stdout.strip())
-            if version:
+        result = subprocess.run(
+            ["git", "-C", str(root), "describe", "--tags", "--dirty", "--always"],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=3,
+        )
+        if result.returncode == 0:
+            version = _format_omegaclaw_version(result.stdout)
+            if version is not None:
                 return version
-        except Exception:
-            pass
+    except (OSError, subprocess.TimeoutExpired):
+        pass
 
-    return _read_baked_version() or "OmegaClaw unknown"
+    try:
+        version = _format_omegaclaw_version(
+            (root / "version").read_text(encoding="utf-8")
+        )
+        if version is not None:
+            return version
+    except OSError:
+        pass
+
+    return "OmegaClaw unknown"
+
+
+def test_omegaclaw_version():
+    with TemporaryDirectory() as directory:
+        root = Path(directory)
+        assert omegaclaw_version(root) == "OmegaClaw unknown"
+
+        (root / "version").write_text("v1.2.3-4-g1234567\n", encoding="utf-8")
+        assert omegaclaw_version(root) == "OmegaClaw v1.2.3-4-g1234567"
+
+        (root / "version").write_text("OmegaClaw v1.2.3\n", encoding="utf-8")
+        assert omegaclaw_version(root) == "OmegaClaw v1.2.3"
 
 
 def test_balance_parenthesis():
@@ -276,4 +270,5 @@ def test_balance_parenthesis():
     assert balance_parentheses('(- Found a bug') == '((pin "Found a bug"))'
 
 if __name__ == "__main__":
+    test_omegaclaw_version()
     test_balance_parenthesis()

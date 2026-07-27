@@ -49,6 +49,12 @@ jobs:
       AUTOTESTS_OMEGACLAW_CONTAINER: omegaclaw
       AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Login to Docker Hub
         if: ${{ inputs.publish_docker }}
         uses: docker/login-action@v4
@@ -66,6 +72,7 @@ jobs:
       - name: Build image (no push)
         uses: docker/build-push-action@v7
         with:
+          context: .
           platforms: linux/amd64
           load: ${{ inputs.run_tests }}
           push: false
@@ -74,9 +81,15 @@ jobs:
           cache-to: type=gha,mode=min
           no-cache: ${{ inputs.no_build_cache }}
 
-      - name: Autotests - Checkout
+      - name: Verify version in release image
         if: inputs.run_tests
-        uses: actions/checkout@v4
+        run: |
+          expected="OmegaClaw $(git describe --tags --dirty --always)"
+          test "$(./scripts/omegaclaw --version)" = "$expected"
+          actual="$(docker run --rm \
+            --entrypoint /PeTTa/repos/OmegaClaw-Core/scripts/omegaclaw \
+            singularitynet/omegaclaw:${AUTOTESTS_OMEGACLAW_TAG} --version)"
+          test "$actual" = "$expected"
 
       - name: Autotests - Set up
         if: inputs.run_tests
@@ -131,6 +144,7 @@ jobs:
         continue-on-error: true
         uses: docker/build-push-action@v7
         with:
+          context: .
           platforms: ${{ inputs.platforms }}
           push: ${{ inputs.publish_docker }}
           tags: |
@@ -146,6 +160,7 @@ jobs:
         if: inputs.publish_docker && steps.push.outcome == 'failure'
         uses: docker/build-push-action@v7
         with:
+          context: .
           platforms: ${{ inputs.platforms }}
           push: ${{ inputs.publish_docker }}
           tags: |
