@@ -1,12 +1,10 @@
 (= (maxNewInputLoops) (empty))
 (= (maxWakeLoops) (empty))
 (= (sleepInterval) (empty))
-(= (LLM) (empty))
 (= (provider) (empty))
 (= (maxOutputToken) (empty))
 (= (reasoningMode) (empty))
 (= (wakeupInterval) (empty))
-(= (logConfigPath) (empty))
 (= (memoryDirectory) (empty))
 (= (spamShield) (empty)) ; TODO: this parameter is considered deprecated
 
@@ -15,17 +13,14 @@
           (configure maxWakeLoops 1)
           (configure spamShield False)
           (configure sleepInterval 1) ;10
-          (configure LLM gpt-5.4)
           (configure provider Anthropic)
           (configure maxOutputToken 6000)
           (configure reasoningMode medium)
           (configure wakeupInterval 600) ;600=10 minutes
-          (configure logConfigPath "")
           (configure memoryDirectory ./)
           (change-state! &prevmsg "")
           (change-state! &lastresults "")
           (change-state! &loops (maxNewInputLoops))
-          (py-call (logger.setup_logging (logConfigPath)))
           ))
 
 (= (initKnowledge)
@@ -36,6 +31,7 @@
 
 (= (getContext)
    (string-safe (py-str ("PROMPT: " (getPrompt (provider)) " SKILLS: " (getSkills)
+                         (newline) (getPromptExtensions) (newline)
                          " OUTPUT_FORMAT: Up to 5 lines, do not wrap quotes around args, do not use variables:" (newline)
                          " toolName1 arg1" (newline)
                          " toolName2 arg2" (newline)
@@ -47,6 +43,12 @@
                          " HISTORY: " (getHistory) 
                          " TIME: " (get_time_as_string)))))
 
+(= (getPromptExtensions)
+   (join (newline) (collapse (prompt-extension $_))))
+
+; dynamic prompt extension placeholder to eliminate error when no extension is added
+(= (prompt-extension placeholder) (empty))
+
 (= (HandleError $msg $cmd $sexpr)
    (case $sexpr (((Error $a $b) (let $new (append (get-state &error) (($msg $cmd)))
                                           (progn (change-state! &error $new) (ALERT_FAILED $a $b))))
@@ -55,13 +57,15 @@
 (= (omegaclaw)
    (omegaclaw 1))
 (= (omegaclaw $k)
-   (progn (if (== $k 1) (progn (initLoop)
+   (progn (if (== $k 1) (progn (initConfig)
+                               (initLoop)
+                               (initLogger)
                                (applySecurityPolicy)
                                (initMemory)
                                (initKnowledge)
                                (initPlugins)
                                (initChannels)
-                               (llmProviderConfig (provider)))
+                               (llmProviderStart (provider)))
                         (change-state! &loops (- (get-state &loops) 1)))
           (let $prompt (getContext)
                (progn (log INFO "loop" (---------iteration $k))

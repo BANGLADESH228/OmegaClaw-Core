@@ -8,7 +8,8 @@ import urllib.parse
 import urllib.request
 import auth
 from src.logger import get_logger
-import pluginapi as plugin
+import channels
+from config import config_get_by_key
 
 logger = get_logger(__name__)
 
@@ -481,15 +482,18 @@ def send_message(text):
             logger.exception(f"Send failed: {exc}")
             return
 
-class SlackChannel(plugin.CommChannel):
+class SlackChannel(channels.CommChannel):
 
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        channel = config.get("SL_CHANNEL_ID", "")
-        poll_interval = int(config.get("SL_POLL_INTERVAL", 60))
+    def start(self) -> None:
+        channel = config_get_by_key("SL_CHANNEL_ID", "")
+        poll_interval = int(config_get_by_key("SL_POLL_INTERVAL", 60))
         start_slack(channel, poll_interval)
+
+    def stop(self) -> None:
+        stop_slack()
 
     def receive(self) -> str:
         return getLastMessage()
@@ -498,4 +502,4 @@ class SlackChannel(plugin.CommChannel):
         send_message(message)
 
 def loadOmegaClawPlugin():
-    plugin.registerCommChannel("slack", SlackChannel())
+    channels.registerCommChannel("slack", SlackChannel())

@@ -5,7 +5,16 @@
 (= (initChannels)
    (progn (log INFO "channels" "Initializing channels")
           (configure commchannel irc)
-          (commChannelConfig (commchannel))))
+          (commChannelStart (commchannel))))
+
+(= (commChannelStart $commchannel)
+   (py-call (channels.commChannelStart $commchannel)))
+
+(= (commChannelReceive)
+   (py-call (channels.commChannelReceive)))
+
+(= (commChannelSend $message)
+   (py-call (channels.commChannelSend $message)))
 
 ;Receive the latest user message considering all communication channels:
 (= (receive)

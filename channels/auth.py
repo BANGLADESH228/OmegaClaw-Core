@@ -3,9 +3,7 @@ import os
 import time
 import urllib.request
 from pathlib import Path
-import logging
-
-logger = logging.getLogger(__name__)
+from config import config_get_by_key
 
 from src.logger import get_logger
 
@@ -23,7 +21,7 @@ _user_ID_processed = False
 def get_proxy_url():
     global _proxy_url
     if _proxy_url is None:
-        _proxy_url = os.environ.get("GATEWAY_URL", "").rstrip("/")
+        _proxy_url = config_get_by_key("GATEWAY_URL", "").rstrip("/")
     return _proxy_url
 
 
