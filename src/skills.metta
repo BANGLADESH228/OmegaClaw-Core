@@ -89,6 +89,9 @@
           (translatePredicate (close $Out))
           WRITE-FILE-SUCCESS))
 
+;Imported before append-file uses line_separator: function bodies compile in file order, so the name must be a known function first.
+!(import_prolog_functions_from_file (library OmegaClaw-Core ./src/skills.pl) (shell first_char gc read_file_tail line_separator))
+
 (= (append-file $file $str)
    (let $sep (line_separator $file)
         (progn (translatePredicate (exists_file $file))
@@ -110,8 +113,6 @@
 
 (= (get-io-policy)
    (py-call (policy.get_allowed_policy_paths (securityPolicyPath))))
-
-!(import_prolog_functions_from_file (library OmegaClaw-Core ./src/skills.pl) (shell first_char gc read_file_tail line_separator))
 
 (= (metta $str)
    (let $code (sread $str)
