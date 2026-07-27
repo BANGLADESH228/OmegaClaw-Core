@@ -6,6 +6,10 @@ import time
 import requests
 import websocket
 import auth
+from src.logger import get_logger
+import channels
+
+logger = get_logger(__name__)
 
 _running = False
 _ws = None
@@ -127,8 +131,10 @@ def _ws_loop():
                         send_message(f"Authentication successful for {name}.")
 
         except websocket.WebSocketTimeoutException:
+            logger.debug("Mattermost websocket receive timed out, polling again")
             continue
-        except Exception:
+        except Exception as e:
+            logger.exception(f"WebSocket error: {e}")
             break
 
     ws.close()
@@ -167,3 +173,23 @@ def send_message(text):
         headers=_headers,
         json={"channel_id": CHANNEL_ID, "message": text}
     )
+
+class MattermostChannel(channels.CommChannel):
+
+    def __init__(self):
+        super().__init__()
+
+    def config(self, config: dict) -> None:
+        global MM_URL, CHANNEL_ID
+        url = config.get("MM_URL", MM_URL)
+        channel = config.get("MM_CHANNEL_ID", CHANNEL_ID)
+        start_mattermost(url, channel_id)
+
+    def receive(self) -> str:
+        return getLastMessage()
+
+    def send(self, message: str) -> None:
+        send_message(message)
+
+def loadOmegaClawPlugin():
+    channels.registerCommChannel("mattermost", MattermostChannel())
