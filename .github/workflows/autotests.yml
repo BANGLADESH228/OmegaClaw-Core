@@ -3,6 +3,11 @@ name: autotests
 on:
   workflow_call:
     inputs:
+      platforms:
+        description: 'Comma separated list of platforms to test'
+        required: false
+        default: 'linux/amd64,linux/arm64'
+        type: string
       no_build_cache:
         description: 'Do not use cached docker layers on image build'
         required: false
@@ -13,16 +18,39 @@ on:
         required: false
 
 jobs:
-  autotests:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.platforms.outputs.matrix }}
+    steps:
+      - name: Select supported platforms
+        id: platforms
+        env:
+          REQUESTED_PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          # Add new autotest platforms here, including their dedicated runner.
+          supported_platforms='[
+            {"platform":"linux/amd64","platform_suffix":"amd64","runner":"ubuntu-latest"},
+            {"platform":"linux/arm64","platform_suffix":"arm64","runner":"ubuntu-24.04-arm"}
+          ]'
+
+          matrix=$(jq -c --arg requested "$REQUESTED_PLATFORMS" '
+            ($requested | split(",") | map(gsub("^\\s+|\\s+$"; "")) | unique) as $requested_platforms
+            | {include: [
+                .[]
+                | select(.platform as $platform | $requested_platforms | index($platform))
+              ]}
+          ' <<< "$supported_platforms")
+
+          echo "Selected autotest matrix: $matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  autotests:
+    needs: prepare
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            platform_suffix: amd64
-          - platform: linux/arm64
-            platform_suffix: arm64
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     env:
       AUTOTESTS_OMEGACLAW_CONTAINER: omegaclaw
       AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}-${{ matrix.platform_suffix }}'

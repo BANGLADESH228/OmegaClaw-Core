@@ -49,6 +49,7 @@ jobs:
     if: inputs.run_tests
     uses: ./.github/workflows/autotests.yml
     with:
+      platforms: ${{ inputs.platforms }}
       no_build_cache: ${{ inputs.no_build_cache }}
     secrets: inherit
 
