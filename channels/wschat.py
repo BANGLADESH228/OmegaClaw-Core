@@ -63,6 +63,7 @@ import uuid
 from collections import deque
 from pathlib import Path
 import sys
+from config import config_get_by_key
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
@@ -341,8 +342,11 @@ class WSChannel(channels.CommChannel):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        start_websocket(config.get("WS_URL", ""), config.get("WS_TOKEN", ""))
+    def start(self) -> None:
+        start_websocket(config_get_by_key("WS_URL", ""), config_get_by_key("WS_TOKEN", ""))
+
+    def stop(self) -> None:
+        stop_websocket()
 
     def receive(self) -> str:
         return getLastMessage()
