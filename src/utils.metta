@@ -43,11 +43,6 @@
    (let $Len (string_length $String)
         (sub_string $String (max 0 (- $Len $N)) $_ 0)))
 
-(= (configure $name $default)
-   (let $value (argk $name $default)
-        (add-atom &self (= ($name) $value))))
-   
-
 (= (take $k ()) ())
 (= (take $k (cons $h $t))
    (if (== $k 0)

@@ -96,16 +96,3 @@ def loadPythonPlugin(name, location):
         _error("_initPythonPlugin", f"No loadOmegaClawPlugin() function is implemented by plugin {name}")
     plugin_loader = getattr(mod, "loadOmegaClawPlugin")
     plugin_loader()
-
-def commandLineToDict(list):
-    """Converts list of <key>=<value> pairs into Python dictionary. If
-    parameter doesn't include "=" it is added as a boolean value
-    <parameter>=True"""
-    dict = {}
-    for arg in list:
-        kv = arg.split("=", 1)
-        if len(kv) == 2:
-            dict[kv[0]] = kv[1]
-        else:
-            dict[kv[0]] = True
-    return dict

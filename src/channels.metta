@@ -5,10 +5,10 @@
 (= (initChannels)
    (progn (log INFO "channels" "Initializing channels")
           (configure commchannel irc)
-          (commChannelConfig (commchannel))))
+          (commChannelStart (commchannel))))
 
-(= (commChannelConfig $commchannel)
-   (py-call (channels.commChannelConfig $commchannel (py-call (plugin.commandLineToDict (command-line))))))
+(= (commChannelStart $commchannel)
+   (py-call (channels.commChannelStart $commchannel)))
 
 (= (commChannelReceive)
    (py-call (channels.commChannelReceive)))

@@ -7,10 +7,12 @@ _llmProviderRegistry = {}
 class LLMProvider:
     """LLM provider implementation"""
 
-    def config(self, config: dict) -> None:
-        """Configure LLM provider. Receives the subset of the command line
-        parameters or configuration file keys which are started by "<id>_"
-        prefix"""
+    def start(self) -> None:
+        """Configure and start LLM provider"""
+        raise NotImplementedError()
+
+    def stop(self) -> None:
+        """Stop and LLM provider and free resources"""
         raise NotImplementedError()
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
@@ -25,13 +27,13 @@ def registerLLMProvider(id: str, provider: LLMProvider) -> None:
 
 _llmprovider: LLMProvider = None
 
-def llmProviderConfig(provider, config):
-    """Select and configure one of the LLM providers registered by plugins"""
+def llmProviderStart(provider):
+    """Select and start one of the LLM providers registered by plugins"""
     global _llmprovider
     _llmprovider = _llmProviderRegistry.get(provider, None)
     if _llmprovider is None:
-        _error("llmProviderConfig", f"LLM provider plugin {provider} is not registered")
-    _llmprovider.config(config)
+        _error("llmProviderStart", f"LLM provider plugin {provider} is not registered")
+    _llmprovider.start()
 
 def llmProviderChat(prompt, max_tokens, reasoning_mode):
     """Chat via selected LLM provider"""

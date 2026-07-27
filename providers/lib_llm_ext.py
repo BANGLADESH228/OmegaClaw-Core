@@ -1,6 +1,7 @@
 import os, hashlib
 import openai
 from typing import Optional, Tuple, Dict, Any
+from config import config_get_by_key
 
 PROMPT_DELIMITER = ":-:-:-:"
 
@@ -62,6 +63,9 @@ class AbstractAIProvider:
     def is_available(self) -> bool:
         raise NotImplementedError
 
+    def stop(self) -> None:
+        raise NotImplementedError
+
 class AIProvider(AbstractAIProvider):
     """Lazy AI provider with on-demand initialization."""
 
@@ -79,7 +83,7 @@ class AIProvider(AbstractAIProvider):
 
     def _create_client(self) -> Optional[openai.OpenAI]:
         """Create OpenAI client from environment."""
-        proxy_url = os.environ.get("GATEWAY_URL")
+        proxy_url = config_get_by_key("GATEWAY_URL")
         if proxy_url:
             prefix = self._name.lower()
             base_url = f"{proxy_url.rstrip('/')}/{prefix}/"
@@ -96,7 +100,7 @@ class AIProvider(AbstractAIProvider):
     @property
     def is_available(self) -> bool:
         """Check if provider is configured (without initializing)."""
-        return bool(os.environ.get("GATEWAY_URL")) or bool(os.environ.get(self._var_name))
+        return bool(config_get_by_key("GATEWAY_URL")) or bool(os.environ.get(self._var_name))
 
     def _build_messages(self, content: str):
         sysmsg, usermsg = _split_system_user(content)
@@ -136,6 +140,10 @@ class AIProvider(AbstractAIProvider):
         """Unescape special characters."""
         return text.replace("_quote_", '"').replace("_apostrophe_", "'").replace("</arg_value>", " ") \
                     .replace("</tool_call>", " ").replace("<arg_value>", " ").replace("<tool_call>", " ")
+
+    def stop(self) -> None:
+        self._client.close()
+        self._client = None
 
 
 _embedding_model = None
