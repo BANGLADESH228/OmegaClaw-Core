@@ -6,7 +6,6 @@
 (= (maxOutputToken) (empty))
 (= (reasoningMode) (empty))
 (= (wakeupInterval) (empty))
-(= (logConfigPath) (empty))
 (= (memoryDirectory) (empty))
 (= (spamShield) (empty)) ; TODO: this parameter is considered deprecated
 
@@ -20,13 +19,11 @@
           (configure maxOutputToken 6000)
           (configure reasoningMode medium)
           (configure wakeupInterval 600) ;600=10 minutes
-          (configure logConfigPath "")
           (configure memoryDirectory ./)
           (change-state! &prevmsg "")
           (change-state! &lastresults "")
           (change-state! &version_sent False)
           (change-state! &loops (maxNewInputLoops))
-          (py-call (logger.setup_logging (logConfigPath)))
           ))
 
 (= (initKnowledge)
@@ -37,6 +34,7 @@
 
 (= (getContext)
    (string-safe (py-str ("PROMPT: " (getPrompt (provider)) " SKILLS: " (getSkills)
+                         (newline) (getPromptExtensions) (newline)
                          " OUTPUT_FORMAT: Up to 5 lines, do not wrap quotes around args, do not use variables:" (newline)
                          " toolName1 arg1" (newline)
                          " toolName2 arg2" (newline)
@@ -48,6 +46,12 @@
                          " HISTORY: " (getHistory) 
                          " TIME: " (get_time_as_string)))))
 
+(= (getPromptExtensions)
+   (join (newline) (collapse (prompt-extension $_))))
+
+; dynamic prompt extension placeholder to eliminate error when no extension is added
+(= (prompt-extension placeholder) (empty))
+
 (= (HandleError $msg $cmd $sexpr)
    (case $sexpr (((Error $a $b) (let $new (append (get-state &error) (($msg $cmd)))
                                           (progn (change-state! &error $new) (ALERT_FAILED $a $b))))
@@ -57,10 +61,13 @@
    (omegaclaw 1))
 (= (omegaclaw $k)
    (progn (if (== $k 1) (progn (initLoop)
+                               (initLogger)
                                (applySecurityPolicy)
                                (initMemory)
                                (initKnowledge)
-                               (initChannels))
+                               (initPlugins)
+                               (initChannels)
+                               (llmProviderConfig (provider)))
                         (change-state! &loops (- (get-state &loops) 1)))
           (let $prompt (getContext)
                (progn (log INFO "loop" (---------iteration $k))
@@ -77,7 +84,7 @@
                                        ($_ (log INFO "loop" $lastmessage))
                                        ($send (py-str ($prompt :-:-:-: $lastmessage)))
                                        ($_ (log INFO "loop" (CHARS_SENT: (string_length $send) $send)))
-                                       ($respi (py-call (lib_llm_ext.callProvider (provider) $send (maxOutputToken) (reasoningMode))))
+                                       ($respi (llmProviderChat $send (maxOutputToken) (reasoningMode)))
                                        ($resp (py-call (helper.balance_parentheses $respi)))
                                        ($response (if (== "(" (first_char $resp)) $resp (progn (log INFO "loop" $resp) (repr (REMEMBER:OUTPUT_NOTHING_ELSE_THAN: ((skill arg) ...))))))
                                        ($sexpr (catch (sread $response)))

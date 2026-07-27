@@ -6,6 +6,7 @@ import urllib.parse
 import urllib.request
 import auth
 from src.logger import get_logger
+import channels
 
 logger = get_logger(__name__)
 
@@ -212,7 +213,8 @@ def start_telegram(chat_id="", poll_timeout=20):
 
     try:
         _poll_timeout = max(1, int(poll_timeout))
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Invalid poll_timeout {poll_timeout!r}, falling back to 20: {e}")
         _poll_timeout = 20
 
     _offset = None
@@ -257,3 +259,22 @@ def send_message(text):
         except Exception as exc:
             logger.exception(f"Send failed: {exc}")
             return
+
+class TelegramChannel(channels.CommChannel):
+
+    def __init__(self):
+        super().__init__()
+
+    def config(self, config: dict) -> None:
+        chat_id = config.get("TG_CHAT_ID", "")
+        poll_timeout = int(config.get("TG_POLL_TIMEOUT", 20))
+        start_telegram(chat_id, poll_timeout)
+
+    def receive(self) -> str:
+        return getLastMessage()
+
+    def send(self, message: str) -> None:
+        send_message(message)
+
+def loadOmegaClawPlugin():
+    channels.registerCommChannel("telegram", TelegramChannel())

@@ -6,9 +6,9 @@ import time
 import textwrap
 import auth
 from src.logger import get_logger
+import channels
 
 logger = get_logger(__name__)
-
 
 _running = False
 _sock = None
@@ -98,8 +98,10 @@ def _irc_loop(channel, server, port, nick):
             if not data:
                 break
         except socket.timeout:
+            logger.debug("IRC receive timed out, polling again")
             continue
-        except OSError:
+        except OSError as e:
+            logger.exception(f"IRC socket error, stopping receive loop: {e}")
             break
         read_buffer += data
         while "\r\n" in read_buffer:
@@ -135,7 +137,7 @@ def _irc_loop(channel, server, port, nick):
                     elif state == "auth_bound":
                         _send(f"PRIVMSG {_channel} :Authentication successful for {nick}.")
                 except Exception as e:
-                    logger.exception(f"[IRC]: exception caught {repr(e)}")
+                    logger.exception(f"Exception caught {repr(e)}")
     _connected = False
     with _sock_lock:
         _sock = None
@@ -169,4 +171,25 @@ def send_message(text):
             if _connected and _channel:
                  _send(f"PRIVMSG {_channel} :{chunk}")
         except Exception as e:
-            logger.exception(f"error in send_message on channel {_channel}: {e}")
+            logger.exception(f"Error in send_message on channel {_channel}: {e}")
+
+class IRCChannel(channels.CommChannel):
+
+    def __init__(self):
+        super().__init__()
+
+    def config(self, config: dict) -> None:
+        channel = config.get("IRC_channel", "##omegaclaw")
+        server = config.get("IRC_server", "irc.quakenet.org")
+        port = int(config.get("IRC_port", 6667))
+        user = config.get("IRC_user", "omegaclaw")
+        start_irc(channel, server, port, user)
+
+    def receive(self) -> str:
+        return getLastMessage()
+
+    def send(self, message: str) -> None:
+        send_message(message)
+
+def loadOmegaClawPlugin():
+    channels.registerCommChannel("irc", IRCChannel())
