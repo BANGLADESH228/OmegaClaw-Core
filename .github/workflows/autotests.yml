@@ -47,14 +47,21 @@ jobs:
 
   autotests:
     needs: prepare
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
-    runs-on: ${{ matrix.runner }}
     env:
       AUTOTESTS_OMEGACLAW_CONTAINER: omegaclaw
-      AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}-${{ matrix.platform_suffix }}'
+      AUTOTESTS_OMEGACLAW_TAG: 'cicd-${{ github.run_id }}'
     steps:
+      - name: Complete tag name
+        run: |
+          echo "AUTOTESTS_OMEGACLAW_TAG=$AUTOTESTS_OMEGACLAW_TAG-${PLATFORM////-}" >> "$GITHUB_ENV"
+          echo "Completed image tag $AUTOTESTS_OMEGACLAW_TAG"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
