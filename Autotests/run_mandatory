@@ -35,3 +35,4 @@ mock/test_transition_pin_to_remember_mock.py
 mock/test_workflow_plugin_mock.py
 mock_websocket/test_wschat_unit.py
 test_websearch_smoke.py
+unit/test_fileio_verified_writes.py
