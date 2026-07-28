@@ -1,3 +1,4 @@
+import hmac
 import json
 import os
 import time
@@ -25,14 +26,18 @@ def get_proxy_url():
     return _proxy_url
 
 
+def _local_auth_secret():
+    return os.environ.get("OMEGACLAW_AUTH_SECRET", "").strip()
+
+
 def is_auth_enabled():
     global _auth_enabled
     if _auth_enabled is not None:
         return _auth_enabled
     proxy = get_proxy_url()
     if not proxy:
-        _auth_enabled = False
-        return False
+        _auth_enabled = bool(_local_auth_secret())
+        return _auth_enabled
     try:
         url = f"{proxy}/auth/status"
         with urllib.request.urlopen(url, timeout=5) as resp:
@@ -47,7 +52,8 @@ def is_auth_enabled():
 def verify_token(candidate):
     proxy = get_proxy_url()
     if not proxy:
-        return True
+        secret = _local_auth_secret()
+        return bool(secret) and hmac.compare_digest(str(candidate), secret)
     url = f"{proxy}/auth/verify"
     req = urllib.request.Request(url)
     req.add_header("X-Auth-Token", str(candidate))
