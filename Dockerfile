@@ -73,8 +73,11 @@ FROM builder AS versioned-source
 
 WORKDIR /omegaclaw-source
 COPY . .
-RUN python3 -c 'from src.helper import omegaclaw_version; print(omegaclaw_version())' > /tmp/omegaclaw-version \
+RUN git ls-files -ci --exclude-from=.dockerignore -z > /tmp/omegaclaw-ignored-tracked \
+ && git checkout-index --force --stdin -z < /tmp/omegaclaw-ignored-tracked \
+ && python3 -c 'from src.helper import omegaclaw_version; print(omegaclaw_version())' > /tmp/omegaclaw-version \
  && mv /tmp/omegaclaw-version ./version \
+ && while IFS= read -r -d '' path; do rm -f -- "$path"; done < /tmp/omegaclaw-ignored-tracked \
  && rm -rf ./.git \
  && chmod 0444 ./version
 
