@@ -57,8 +57,9 @@ jobs:
     steps:
       - name: Complete tag name
         run: |
-          echo "AUTOTESTS_OMEGACLAW_TAG=$AUTOTESTS_OMEGACLAW_TAG-${PLATFORM////-}" >> "$GITHUB_ENV"
-          echo "Completed image tag $AUTOTESTS_OMEGACLAW_TAG"
+          NEW_TAG="$AUTOTESTS_OMEGACLAW_TAG-${PLATFORM////-}"
+          echo "AUTOTESTS_OMEGACLAW_TAG=$NEW_TAG" >> "$GITHUB_ENV"
+          echo "Completed image tag $NEW_TAG"
         env:
           PLATFORM: ${{ matrix.platform }}
 
