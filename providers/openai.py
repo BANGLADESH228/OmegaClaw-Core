@@ -2,6 +2,7 @@ import os
 import lib_llm_ext as llm
 import providers
 from src.logger import get_logger
+from config import config_get_by_key
 
 logger = get_logger(__name__)
 
@@ -10,10 +11,14 @@ class OpenAIProvider(providers.LLMProvider):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        model = config.get("model", "gpt-5.5")
+    def start(self) -> None:
+        openai_model = config_get_by_key("openai_model", "gpt-5.5")
+        model = config_get_by_key("model", openai_model)
         self.delegate = OpenAIProviderImpl("OpenAI", "OPENAI_API_KEY",
                                            model, "https://api.openai.com/v1")
+
+    def stop(self) -> None:
+        self.delegate.stop()
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
         return self.delegate.chat(prompt, max_tokens, reasoning_mode)
@@ -40,7 +45,7 @@ class OpenAIProviderImpl(llm.AIProvider):
                 "input": usermsg,
                 "max_output_tokens": max_tokens,
                 "reasoning": {"effort": reasoning},
-                "prompt_cache_key": os.environ.get("OPENAI_PROMPT_CACHE_KEY", llm._stable_cache_key("openai", self._model_name, sysmsg)),
+                "prompt_cache_key": config_get_by_key("OPENAI_PROMPT_CACHE_KEY", llm._stable_cache_key("openai", self._model_name, sysmsg)),
             }
             # GPT-5.5 supports only 24h; GPT-5.4 also supports extended retention.
             if self._model_name.startswith(("gpt-5.5", "gpt-5.4")):

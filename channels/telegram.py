@@ -7,6 +7,7 @@ import urllib.request
 import auth
 from src.logger import get_logger
 import channels
+from config import config_get_by_key
 
 logger = get_logger(__name__)
 
@@ -262,10 +263,13 @@ class TelegramChannel(channels.CommChannel):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        chat_id = config.get("TG_CHAT_ID", "")
-        poll_timeout = int(config.get("TG_POLL_TIMEOUT", 20))
+    def start(self) -> None:
+        chat_id = config_get_by_key("TG_CHAT_ID", "")
+        poll_timeout = int(config_get_by_key("TG_POLL_TIMEOUT", 20))
         start_telegram(chat_id, poll_timeout)
+
+    def stop(self) -> None:
+        stop_telegram()
 
     def receive(self) -> str:
         return getLastMessage()

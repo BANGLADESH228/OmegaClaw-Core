@@ -9,6 +9,7 @@ import urllib.request
 import auth
 from src.logger import get_logger
 import channels
+from config import config_get_by_key
 
 logger = get_logger(__name__)
 
@@ -486,10 +487,13 @@ class SlackChannel(channels.CommChannel):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
-        channel = config.get("SL_CHANNEL_ID", "")
-        poll_interval = int(config.get("SL_POLL_INTERVAL", 60))
+    def start(self) -> None:
+        channel = config_get_by_key("SL_CHANNEL_ID", "")
+        poll_interval = int(config_get_by_key("SL_POLL_INTERVAL", 60))
         start_slack(channel, poll_interval)
+
+    def stop(self) -> None:
+        stop_slack()
 
     def receive(self) -> str:
         return getLastMessage()

@@ -29,11 +29,13 @@ LLM_COMMANDS = {
     "tavily-search",
     "technical-analysis",
     "write-file",
-    "get-io-policy"
+    "get-io-policy",
+    "write-file-b64",
 }
 TWO_ARG_COMMANDS = {
     "write-file",
-    "append-file"
+    "append-file",
+    "write-file-b64"
 }
 
 def extract_timestamp(line):
@@ -242,6 +244,8 @@ def test_omegaclaw_version():
 def test_balance_parenthesis():
     assert balance_parentheses('(write-file test.txt hello world)') == '((write-file "test.txt" "hello world"))'
     assert balance_parentheses('(append-file test.txt hello world)') == '((append-file "test.txt" "hello world"))'
+    assert balance_parentheses('(write-file-b64 test.txt aGVsbG8=)') == '((write-file-b64 "test.txt" "aGVsbG8="))'
+    assert balance_parentheses('write-file-b64 test.txt aGVsbG8=') == '((write-file-b64 "test.txt" "aGVsbG8="))'
     assert balance_parentheses('(write-file "test.txt" hello world)') == '((write-file "test.txt" "hello world"))'
     assert balance_parentheses('(write-file "test.txt" "hello world")') == '((write-file "test.txt" "hello world"))'
     assert balance_parentheses('(write-file test.txt "hello world")') == '((write-file "test.txt" "hello world"))'
