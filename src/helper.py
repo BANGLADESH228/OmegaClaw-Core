@@ -202,6 +202,9 @@ def omegaclaw_version(repo_root: str | os.PathLike | None = None) -> str:
     root = Path(repo_root) if repo_root is not None else Path(projectRootDirectory())
 
     try:
+        # Prevent `git -C` from walking up to a parent repository such as /PeTTa.
+        if not (root / ".git").exists():
+            raise FileNotFoundError
         result = subprocess.run(
             ["git", "-C", str(root), "describe", "--tags", "--dirty", "--always"],
             check=False,
