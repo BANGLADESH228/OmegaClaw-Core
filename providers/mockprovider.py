@@ -7,8 +7,11 @@ class MockProvider(providers.LLMProvider):
     def __init__(self):
         super().__init__()
 
-    def config(self, config: dict) -> None:
+    def start(self) -> None:
         self.delegate = MockProviderImpl()
+
+    def stop(self) -> None:
+        self.delegate.stop()
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
         return self.delegate.chat(prompt, max_tokens, reasoning_mode)
@@ -37,3 +40,7 @@ class MockProviderImpl(llm.AbstractAIProvider):
     def chat(self, content: str, max_tokens: int = 6000, reasoning: str = "medium", **kwargs) -> str:
         return self._llm_mock().chat(content)
 
+    def stop(self) -> None:
+        if self._mock is not None:
+            self._mock.stop(timeout=10)
+            self._mock = None
