@@ -54,27 +54,3 @@ read_file_tail(Path, MaxChars, Text) :-
         ),
         close(In)
     ).
-
-%Last byte of Path, -1 when the file is empty, read as bytes so that a
-%multi-byte character at the end is not decoded from its middle:
-last_byte(Path, Byte) :-
-    setup_call_cleanup(
-        open(Path, read, In, [type(binary)]),
-        (
-            seek(In, 0, eof, End),
-            Start is max(0, End - 1),
-            seek(In, Start, bof, _),
-            get_byte(In, Byte)
-        ),
-        close(In)
-    ).
-
-%Newline needed to start a new line at the end of Path, empty if already at one:
-line_separator(Path, Sep) :-
-    (   exists_file(Path),
-        last_byte(Path, Byte),
-        Byte \== -1,
-        Byte \== 0'\n
-    ->  Sep = "\n"
-    ;   Sep = ""
-    ).
