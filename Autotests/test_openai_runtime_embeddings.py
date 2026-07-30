@@ -38,6 +38,7 @@ def load_rag_module(monkeypatch):
     llm_module.initLocalEmbedding = lambda: None
     llm_module.useLocalEmbedding = lambda text: [0.0]
 
+    monkeypatch.syspath_prepend(str(REPO_ROOT))
     monkeypatch.setitem(sys.modules, "openai", openai_module)
     monkeypatch.setitem(sys.modules, "chromadb", chromadb_module)
     monkeypatch.setitem(sys.modules, "config", config_module)
