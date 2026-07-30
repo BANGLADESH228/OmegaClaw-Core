@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 
-CHANNELS_DIRECTORY = Path(__file__).resolve().parents[1] / "channels"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CHANNELS_DIRECTORY = REPO_ROOT / "channels"
 
 
 @pytest.mark.parametrize(
@@ -33,6 +34,7 @@ def test_unbound_plain_message_is_not_used_as_auth_token(monkeypatch, module_nam
     config = types.ModuleType("config")
     config.config_get_by_key = lambda key, default=None: default
     monkeypatch.setitem(sys.modules, "config", config)
+    monkeypatch.syspath_prepend(str(REPO_ROOT))
     monkeypatch.syspath_prepend(str(CHANNELS_DIRECTORY))
     if module_name == "mattermost":
         monkeypatch.setitem(sys.modules, "requests", types.ModuleType("requests"))

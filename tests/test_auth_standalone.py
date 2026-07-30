@@ -6,10 +6,12 @@ from pathlib import Path
 import pytest
 
 
-AUTH_MODULE_PATH = Path(__file__).resolve().parents[1] / "channels" / "auth.py"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+AUTH_MODULE_PATH = REPO_ROOT / "channels" / "auth.py"
 
 
 def load_auth_module(monkeypatch, gateway_url=""):
+    monkeypatch.syspath_prepend(str(REPO_ROOT))
     config_module = types.ModuleType("config")
     config_module.config_get_by_key = (
         lambda key, default=None: gateway_url if key == "GATEWAY_URL" else default
