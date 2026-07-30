@@ -132,6 +132,12 @@ def _irc_session(channel, server, port, nick):
                 if len(parts) > 1 and parts[1] == "001":
                     logger.info(f"Registered. Joining {_channel}")
                     _send(f"JOIN {_channel}")
+                elif (
+                    len(parts) > 3
+                    and parts[1] == "366"
+                    and parts[3].lower() == _channel.lower()
+                ):
+                    logger.info(f"Joined {_channel}")
                     _connected = True
                     _flush_outbox()
                 elif len(parts) > 1 and parts[1] in {"403", "405", "471", "473", "474", "475"}:

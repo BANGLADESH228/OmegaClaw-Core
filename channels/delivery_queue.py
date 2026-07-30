@@ -40,7 +40,8 @@ class PendingMessages:
                 deliver(message)
 
                 with self._items_lock:
-                    self._items.popleft()
+                    if self._items:
+                        self._items.popleft()
         finally:
             self._flush_lock.release()
 
