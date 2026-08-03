@@ -8,6 +8,7 @@ import urllib.parse
 import urllib.request
 import auth
 from src.logger import get_logger
+from delivery_queue import PendingMessages
 import channels
 from config import config_get_by_key
 
@@ -33,6 +34,7 @@ _auto_bind_last_refresh = 0.0
 _authenticated_user_id = None
 _rate_limit_until = 0.0
 _AUTO_BIND_REFRESH_INTERVAL = 300
+_outbox = PendingMessages()
 
 _SL_URL = "https://slack.com"
 
@@ -105,8 +107,8 @@ def _is_allowed_message(channel_id, user_id, msg):
             return "allow"
         if _authenticated_user_id is not None:
             return "allow" if user_id == _authenticated_user_id else "ignore"
-        candidate = _parse_auth_candidate(msg)
-        user_id_check = auth.authenticate_channel_user('SLACK', user_id, candidate)
+        auth_candidate = _parse_auth_candidate(msg) if _is_auth_command(msg) else None
+        user_id_check = auth.authenticate_channel_user('SLACK', user_id, auth_candidate)
         if user_id_check in ["auth_bound", "allow"]:
             _authenticated_user_id = user_id
             _channel_id = channel_id
@@ -368,6 +370,30 @@ def _poll_channel(channel_id):
             _channel_offsets[channel_id] = max_ts
 
 
+def _ready_to_send():
+    with _state_lock:
+        return bool(_bot_token and _channel_id)
+
+
+def _deliver_outbound(chunk):
+    with _state_lock:
+        target_channel = _channel_id
+    if not target_channel:
+        raise RuntimeError("Slack channel is not bound")
+    _api_call(
+        "chat.postMessage",
+        {"channel": target_channel, "text": chunk},
+        timeout=15,
+    )
+
+
+def _flush_outbox():
+    try:
+        _outbox.flush(_deliver_outbound, _ready_to_send)
+    except Exception as exc:
+        logger.warning(f"Slack send failed; retaining queued message: {exc}")
+
+
 def _poll_loop():
     global _connected
     logger.info("Polling started")
@@ -400,6 +426,7 @@ def _poll_loop():
                         _poll_channel(channel_id)
 
             _connected = True
+            _flush_outbox()
         except _SlackRateLimitError as exc:
             _connected = False
             logger.warning(f"Rate limited. Backing off for {exc.retry_after}s.")
@@ -468,19 +495,15 @@ def send_message(text):
     text = str(text).replace("\\n", "\n").replace("\r", "")
     if not text:
         return
-    if not _channel_id:
-        return
 
     max_len = 3900
+    chunks = []
     for i in range(0, len(text), max_len):
         chunk = text[i:i + max_len]
-        if not chunk:
-            continue
-        try:
-            _api_call("chat.postMessage", {"channel": _channel_id, "text": chunk}, timeout=15)
-        except Exception as exc:
-            logger.exception(f"Send failed: {exc}")
-            return
+        if chunk:
+            chunks.append(chunk)
+    _outbox.extend(chunks)
+    _flush_outbox()
 
 class SlackChannel(channels.CommChannel):
 
