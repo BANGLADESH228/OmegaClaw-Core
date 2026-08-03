@@ -63,7 +63,7 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
 
-      - name: Autotests - Checkout
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
