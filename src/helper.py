@@ -26,7 +26,8 @@ LLM_COMMANDS = {
     "tavily-search",
     "technical-analysis",
     "write-file",
-    "get-io-policy"
+    "get-io-policy",
+    "delegate-task-to-openclaw-agent"
 }
 TWO_ARG_COMMANDS = {
     "write-file",
