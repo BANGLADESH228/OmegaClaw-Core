@@ -460,6 +460,18 @@ start
 
 }
 
+version() {
+    local script_dir
+    local repo_root
+
+    script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+    repo_root="$(cd -- "${script_dir}/.." && pwd)"
+    (
+        cd -- "$repo_root"
+        python3 -c 'from src.helper import omegaclaw_version; print(omegaclaw_version())'
+    )
+}
+
 help() {
     echo -e "Usage: ${0} [<image tag> | command [options]]"
     echo
@@ -481,6 +493,8 @@ help() {
     echo -e "\t-t <channel type> set communication channel type: irc|telegram|slack|websocket|mattermost|test"
     echo -e "\t-d <Docker image> set Docker image name (default omegaclaw:latest)"
     echo -e "\t-l <logging config> set Python logging config file"
+    echo -e "\t--version, -v show the OmegaClaw version"
+    echo -e "\t--help, -h show this help"
 }
 
 options() {
@@ -656,7 +670,8 @@ case "${command}" in
     start) start ;;
     stop) stop ;;
     clean) clean ;;
-    -h) help ;;
+    --version|-v) version ;;
+    -h|--help) help ;;
     *) image="${command}"
        bootstrap
        ;;
