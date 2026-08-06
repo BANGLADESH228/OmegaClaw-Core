@@ -6,10 +6,17 @@ Protocol reference: https://docs.openclaw.ai/gateway/openresponses-http-api
 The endpoint is stateless per request: the Gateway generates a fresh session
 key for every call unless one is supplied, which matches the "new separate
 session per delegation" contract of the skill.
+
+Delegation is asynchronous. A Gateway turn can take minutes and the agent
+loop is single-threaded, so `send` only hands the task to a worker thread and
+returns an acceptance envelope. The worker never touches the atomspace: it
+parks its record here, and the MeTTa side drains it with `take_completed` on
+its own thread. This mirrors how the communication channels feed the loop.
 """
 
 
 import json
+import threading
 import time
 import os
 import requests
@@ -27,6 +34,16 @@ MODEL_ROUTE = "openclaw"
 SESSION_TIMEOUT = 600.0
 STARTUP_RETRY_ATTEMPTS = 3
 STARTUP_RETRY_MAX_WAIT = 5.0
+MAX_IN_FLIGHT = 5
+# The history window keeps only its last `maxHistory` bytes, so one unbounded
+# reply would evict everything else.
+MAX_REPLY_CHARS = 8000
+TASK_ECHO_CHARS = 80
+
+_lock = threading.Lock()
+_completed = []
+_in_flight = 0
+_seq = 0
 
 
 class OpenClawError(RuntimeError):
@@ -70,10 +87,149 @@ def send(
     openclaw_url: str,
     openclaw_agent: str
 ) -> str:
-    """Send one independent task to OpenClaw.
+    """Hand one independent task to OpenClaw without waiting for the reply.
 
     A new OpenClaw session is created for every invocation. The returned JSON
-    string is suitable for insertion into LAST_SKILL_USE_RESULTS.
+    string is an acceptance envelope suitable for insertion into
+    LAST_SKILL_USE_RESULTS; the reply itself is collected later through
+    `take_completed`.
+
+    Args:
+        message (str): Self-contained natural-language task.
+        openclaw_url (str): The base URL of the OpenClaw Gateway.
+        openclaw_agent (str): The target agent identifier.
+
+    Returns:
+        str: JSON string acknowledging the task, or reporting why it was not
+             accepted, formatted for the agent's context.
+    """
+    global _in_flight, _seq
+    task = str(message).strip()
+    if not task:
+        logger.warning("Refusing to delegate an empty message")
+        return json.dumps({
+            "status": "error",
+            "type": "invalid_input",
+            "message": "message is empty"
+        }, ensure_ascii=False)
+    with _lock:
+        if _in_flight >= MAX_IN_FLIGHT:
+            logger.info(f"Refusing to delegate, {_in_flight} tasks in flight")
+            return json.dumps({
+                "status": "error",
+                "type": "busy",
+                "message": f"{_in_flight} delegations are still running, max in flight: {MAX_IN_FLIGHT}"
+            }, ensure_ascii=False)
+        _seq += 1
+        _in_flight += 1
+        task_id = f"oc-{_seq}"
+    threading.Thread(
+        target=_worker,
+        args=(task_id, task, str(openclaw_url), str(openclaw_agent)),
+        daemon=True,
+    ).start()
+    logger.info(f"Delegated {task_id} to OpenClaw agent '{openclaw_agent}'")
+    return json.dumps({
+        "status": "accepted",
+        "id": task_id,
+        "task": task[:TASK_ECHO_CHARS],
+    }, ensure_ascii=False)
+
+
+def _worker(
+    task_id: str,
+    message: str,
+    openclaw_url: str,
+    openclaw_agent: str
+) -> None:
+    """Run one delegation off the agent loop and park its record for pickup.
+
+    Args:
+        task_id (str): Identifier echoed back to the agent on acceptance.
+        message (str): The task description.
+        openclaw_url (str): The base URL.
+        openclaw_agent (str): Target agent ID.
+    """
+    global _in_flight
+    try:
+        record = _record(task_id, message, _run(message, openclaw_url, openclaw_agent))
+    except Exception as exc:
+        logger.exception(f"Delegation {task_id} crashed: {exc}")
+        # crashed worker reports back instead of leaving the agent waiting
+        # for a record that never arrives.
+        record = _record(task_id, message, json.dumps({
+            "status": "error",
+            "type": "gateway",
+            "message": str(exc)[:256]
+        }, ensure_ascii=False))
+    with _lock:
+        _completed.append(record)
+        _in_flight -= 1
+
+
+def take_completed() -> str:
+    """Drain every delegation record finished since the previous call.
+
+    Returns:
+        str: The records joined by newlines, empty when nothing finished.
+    """
+    global _completed
+    with _lock:
+        records = _completed
+        _completed = []
+    return "\n".join(records)
+
+
+def _record(task_id: str, message: str, result: str) -> str:
+    """Render one finished delegation as a single history line.
+
+    Plain `key=value` text rather than JSON: the record is written through
+    `swrite`, which doubles embedded quotes and would mangle a JSON envelope.
+
+    Args:
+        task_id (str): Identifier the agent saw on acceptance.
+        message (str): The delegated task, echoed so the agent can match it.
+        result (str): The JSON string produced by `_run`.
+
+    Returns:
+        str: One `OPENCLAW_RESULT ...` line.
+    """
+    try:
+        payload = json.loads(result)
+    except ValueError as decode_error:
+        logger.exception(f"Unreadable delegation result: {decode_error}")
+        payload = {"status": "error", "message": result}
+    fields = [
+        f"OPENCLAW_RESULT id={task_id}",
+        f"status={payload.get('status', 'error')}",
+    ]
+    if payload.get("responseId"):
+        fields.append(f"responseId={payload['responseId']}")
+    fields.append(f"task={_flatten(message, TASK_ECHO_CHARS)}")
+    body = payload.get("reply") or payload.get("message") or ""
+    fields.append(f"reply={_flatten(body, MAX_REPLY_CHARS)}")
+    return " ".join(fields)
+
+
+def _flatten(text: str, limit: int) -> str:
+    """Collapse text to one quote-free line that survives `swrite`.
+
+    Args:
+        text (str): Arbitrary text coming from the Gateway or the agent.
+        limit (int): Maximum number of characters to keep.
+
+    Returns:
+        str: The trimmed single-line form.
+    """
+    return " ".join(str(text).replace('"', "'").split())[:limit]
+
+
+def _run(
+    message: str,
+    openclaw_url: str,
+    openclaw_agent: str
+) -> str:
+    """Run one delegation to completion and describe its outcome.
 
     Args:
         message (str): Self-contained natural-language task.
@@ -84,13 +240,6 @@ def send(
         str: JSON string containing either the OpenClaw reply or an error
              formatted for the agent's context.
     """
-    if not str(message).strip():
-        logger.warning("Refusing to delegate an empty message")
-        return json.dumps({
-            "status": "error",
-            "type": "invalid_input",
-            "message": "message is empty"
-        }, ensure_ascii=False)
     logger.info(f"Delegating a task to OpenClaw agent '{openclaw_agent}'")
     try:
         result = _send_with_startup_retry(

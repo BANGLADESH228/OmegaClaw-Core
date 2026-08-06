@@ -383,23 +383,27 @@ Verifies that provider keys, channel tokens, and the auth secret are scrubbed fr
 
 Requires a running, configured OpenClaw Gateway - see "5a. OpenClaw plugin" above before running these. Unlike every other test in this file, the mocked LLM only decides *to call* `delegate-task-to-openclaw-agent`; the skill itself is not scripted and makes a real HTTP call to the Gateway, so its result is genuine, not canned.
 
+Delegation is asynchronous, so these tests assert two stages: the acceptance envelope returned immediately (captured with `write-file`), and the `OPENCLAW_RESULT ...` line the plugin appends to `history.metta` once the Gateway answers (polled with `wait_for_history_keyword`).
+
 ### 35. test_delegate_isolated_and_success_mock
 
 Two phases:
 
 - Phase 1 - mock answer: `(send "Delegating task <run_id>") (delegate-task-to-openclaw-agent "Reply with exactly: unused")`. Checks: the `send` argument does not swallow the following skill call (parser regression guard).
-- Phase 2 - mock answer: `(metta (write-file "<out>.json" (delegate-task-to-openclaw-agent "Reply with exactly: PONG-<run_id>"))) (send "Delegation saved <run_id>")`. Checks: the skill's own JSON result (written straight to a file, bypassing a second LLM turn) parses; `status` is `ok`; `responseId` is non-empty; `reply` contains the echoed marker `PONG-<run_id>`.
+- Phase 2 - mock answer: `(metta (write-file "<out>.json" (delegate-task-to-openclaw-agent "Reply with exactly: PONG-<run_id>"))) (send "Delegation saved <run_id>")`. Checks: the acknowledging `send` lands within 30s; the saved envelope has `status: "accepted"`, a non-empty `id`, and a `task` echo containing `PONG-<run_id>`; an `id=<task id> status=ok` record later reaches history; that line sits inside a well-formed `("YYYY-MM-DD HH:MM:SS"` block, so the `episodes` skill can still parse the file.
+
+  The wait keys on the task id rather than on the `PONG-<run_id>` marker alone: history also stores the agent's own response text, which quotes the `delegate-task-to-openclaw-agent "…PONG-<run_id>"` command verbatim, so the marker is present immediately and would satisfy a marker-only wait before any reply exists.
 
 ### 36. test_delegate_empty_message_mock
 
-Delegates an empty message - no network call is expected, since the skill rejects it before contacting the Gateway:
+Delegates an empty message - no network call and no worker thread, since the skill rejects it before queueing:
 
 - Mock answer: `(metta (write-file "<out>.json" (delegate-task-to-openclaw-agent ""))) (send "Empty delegation checked <run_id>")`.
-- Checks: the agent doesn't crash; the JSON result has `status: "error"`, `type: "invalid_input"`.
+- Checks: the agent doesn't crash; the JSON result has `status: "error"`, `type: "invalid_input"`. Validation stays synchronous precisely so this failure is still reported in the same turn.
 
 ### 37. test_delegate_new_session_per_call_mock
 
 Verifies the "new session per delegation" contract from the plugin README: two independent delegations in the same turn must not share a Gateway session:
 
 - Mock answer: two `(metta (write-file ... (delegate-task-to-openclaw-agent "Reply with exactly: FIRST-<run_id>" / "SECOND-<run_id>")))` calls, then `(send "Both delegations saved <run_id>")`.
-- Checks: both results have `status: "ok"`; their `responseId` values are both present and different from each other.
+- Checks: both envelopes are `accepted` with different `id` values; an `id=<task id> status=ok` record for each of them later reaches history (keyed on the task id for the reason given under test 35); the run's slice of history carries two distinct `responseId=` values. The scoping to this run's window keeps ids left by test 35 from satisfying the check on their own.

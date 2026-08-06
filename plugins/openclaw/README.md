@@ -2,12 +2,18 @@
 
 Adds the `delegate-task-to-openclaw-agent` skill, which hands a self-contained
 task to an agent running on an external [OpenClaw](https://docs.openclaw.ai)
-Gateway and returns its reply.
+Gateway and reports its reply.
 
 Each delegation runs in its own OpenClaw session: the
 [OpenResponses HTTP API](https://docs.openclaw.ai/gateway/openresponses-http-api)
 is stateless per request and generates a fresh session key for every call, so
 delegated tasks never inherit context from each other.
+
+Delegation is **asynchronous**. A Gateway turn can take minutes while the agent
+loop is single-threaded, so the skill hands the task to a worker thread and
+returns straight away; the agent keeps answering messages and running other
+skills meanwhile. The reply is appended to the agent's history on a later
+iteration - see [Skill result](#skill-result).
 
 ## Configure the OpenClaw side
 
@@ -126,17 +132,51 @@ the `delegate-task-to-openclaw-agent` skill.
 
 ## Skill result
 
-Success:
+The result arrives in two stages.
+
+**1. Immediately** the skill returns an acceptance envelope, which the agent
+sees in `LAST_SKILL_USE_RESULTS` on its next iteration:
 
 ```json
-{"status": "ok", "responseId": "resp_...", "reply": "..."}
+{"status": "accepted", "id": "oc-1", "task": "first 80 characters of the task"}
 ```
 
-Failure - `type` is `invalid_input` for an empty message, `gateway` otherwise:
+Two cases are rejected up front instead, without contacting the Gateway -
+`invalid_input` for an empty message, `busy` when `MAX_IN_FLIGHT` delegations
+are already running:
 
 ```json
-{"status": "error", "type": "gateway", "message": "HTTP 401: Unauthorized (unauthorized)"}
+{"status": "error", "type": "invalid_input", "message": "message is empty"}
 ```
+
+**2. Once the Gateway answers**, the worker's record is picked up on the next
+loop iteration and appended to the agent's history as a single line:
+
+```
+OPENCLAW_RESULT id=oc-1 status=ok responseId=resp_... task=<echo> reply=<reply>
+```
+
+Failures land the same way, carrying the reason instead of a reply:
+
+```
+OPENCLAW_RESULT id=oc-1 status=error task=<echo> reply=HTTP 401: Unauthorized (unauthorized)
+```
+
+The `id` and `task` echo let the agent match a record to the task it asked for,
+so out-of-order arrivals are unambiguous. History is used rather than a prompt
+extension because it also holds results that arrive while the agent is idle,
+and it survives a restart.
+
+Two consequences worth knowing:
+
+- Results are **not** delivered instantly. A record that lands while the agent
+  is idle waits for the next wake-up (`wakeupInterval`) or the next user
+  message.
+- Delegations still in flight are **lost if the container restarts** - the
+  worker threads die with the process and no record is ever produced.
+
+`reply` is truncated to `MAX_REPLY_CHARS` so that one large answer cannot evict
+the rest of the history window (`maxHistory`).
 
 ## Troubleshooting
 
@@ -147,6 +187,13 @@ Failure - `type` is `invalid_input` for an empty message, `gateway` otherwise:
 | `HTTP 400: Unknown agent '<id>'` | `openClawAgent` does not exist in `agents.entries` |
 | `Cannot reach OpenClaw Gateway` | Wrong `openClawURL`, or the Gateway is bound to loopback only |
 | `missing scope ... (MISSING_SCOPE)` | The request went to the WebSocket surface instead of `/v1/responses` |
+| `HTTP 504` | The Gateway took longer than the proxy's `proxy_read_timeout` to answer |
+| `busy` and no delegation starts | `MAX_IN_FLIGHT` tasks are still running; they clear as the Gateway answers |
+| No `OPENCLAW_RESULT` ever appears | The container restarted mid-flight, or the plugin's heartbeat listener was not registered - check for `openclaw-plugin: OpenClaw integration is enabled` on startup |
 
-A Gateway that is still booting answers `503`; the plugin retries such a
-response up to `STARTUP_RETRY_ATTEMPTS` times before giving up.
+These errors surface in the `OPENCLAW_RESULT` history line, since the skill
+returns before the Gateway answers.
+
+A Gateway that is still booting answers `503`; the worker retries such a
+response up to `STARTUP_RETRY_ATTEMPTS` times before giving up. The retry runs
+on the worker thread, so it does not stall the agent.
