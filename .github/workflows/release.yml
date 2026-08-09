@@ -36,4 +36,4 @@ jobs:
           docker buildx imagetools create \
             -t bangladesh13/omegaclaw-test:${{ github.event.release.tag_name }} \
             -t bangladesh13/omegaclaw-test:latest \
-            singularitynet/omegaclaw:${{ github.sha }}
+            bangladesh13/omegaclaw-test:${{ github.sha }}
