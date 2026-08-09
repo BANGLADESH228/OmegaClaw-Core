@@ -246,13 +246,16 @@ def test_delegate_stays_async_under_a_slow_gateway_mock(llm, comm, gateway):
     with Checker("delegate-task-to-openclaw-agent stays async") as c:
         print(f"\n=== OmegaClaw: openclaw slow-gateway mock (run-id {c.run_id}) ===", flush=True)
 
+        out_path = f"/tmp/openclaw_slow_{c.run_id}.json"
+
         c.step(f"delegate a task the Gateway holds for {SLOW_GATEWAY_SECONDS}s")
         prompt = make_prompt(c.run_id, "Delegate a long task.")
         llm.set_answer(
             request=prompt,
             response=(
+                f'(metta (write-file "{out_path}" '
                 f'(delegate-task-to-openclaw-agent '
-                f'"OCGW_SLEEP:{SLOW_GATEWAY_SECONDS} Reply with exactly: SLOW-{c.run_id}")\n'
+                f'"OCGW_SLEEP:{SLOW_GATEWAY_SECONDS} Reply with exactly: SLOW-{c.run_id}")))\n'
                 f'(send "Long delegation started {c.run_id}")'
             ),
         )
@@ -289,10 +292,21 @@ def test_delegate_stays_async_under_a_slow_gateway_mock(llm, comm, gateway):
         c.ok("responsive", f"second prompt answered at {answered_after:.1f}s")
 
         c.step("the slow reply still reaches history once the Gateway answers")
-        if not wait_for_history_keyword(c.run_id, [f"SLOW-{c.run_id}"],
-                                        timeout=SLOW_GATEWAY_SECONDS + RESULT_TIMEOUT):
-            c.fail("result", "the slow delegation never produced a history record")
-        c.ok("result", "slow delegation result reached history")
+        try:
+            envelope = _read_json(out_path)
+        except json.JSONDecodeError as e:
+            c.fail("json", f"Failed to parse the skill result: {e}")
+        task_id = envelope.get("id")
+        if envelope.get("status") != "accepted" or not task_id:
+            c.fail("envelope", f"expected an accepted envelope, got: {envelope}")
+        # Matching the id and the ok status, not the marker on its own: the marker
+        # is part of the delegated task text, so it also shows up in a failed record.
+        if not wait_for_history_keyword(c.run_id,
+                                        [f"id={task_id} status=ok", f"reply=SLOW-{c.run_id}"],
+                                        timeout=SLOW_GATEWAY_SECONDS + RESULT_TIMEOUT,
+                                        require_all=True):
+            c.fail("result", "the slow delegation never produced a successful history record")
+        c.ok("result", f"slow delegation result reached history as {task_id}")
 
         c.done()
 
