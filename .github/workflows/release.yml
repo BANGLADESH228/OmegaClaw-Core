@@ -34,6 +34,6 @@ jobs:
       - name: Update release tags
         run: |
           docker buildx imagetools create \
-            -t bangladesh13/omegaclaw-test:${{ github.event.release.tag_name }} \
-            -t bangladesh13/omegaclaw-test:latest \
-            bangladesh13/omegaclaw-test:${{ github.sha }}
+            -t singularitynet/omegaclaw:${{ github.event.release.tag_name }} \
+            -t singularitynet/omegaclaw:latest \
+            singularitynet/omegaclaw:${{ github.sha }}
