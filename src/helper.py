@@ -32,8 +32,7 @@ STATIC_LLM_COMMANDS = {
     "websearch",
     "write-file",
     "get-io-policy",
-    "write-file-b64",
-    "delegate-task-to-openclaw-agent"
+    "write-file-b64"
 }
 LLM_COMMANDS = set(STATIC_LLM_COMMANDS)
 TWO_ARG_COMMANDS = {
