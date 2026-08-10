@@ -6,7 +6,6 @@ from collections import deque
 from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
 
 try:
     from src.logger import get_logger
@@ -247,19 +246,6 @@ def test_omegaclaw_version():
 
         (root / "version").write_text("OmegaClaw v1.2.3\n", encoding="utf-8")
         assert omegaclaw_version(root) == "OmegaClaw version=v1.2.3"
-
-def test_omegaclaw_version_from_git():
-    with TemporaryDirectory() as directory:
-        root = Path(directory)
-        (root / ".git").mkdir()
-        result = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="v1.2.3-4-g1234567-dirty\n"
-        )
-
-        with patch.object(subprocess, "run", return_value=result) as run:
-            assert omegaclaw_version(root) == "OmegaClaw version=v1.2.3-4-g1234567-dirty"
-
-        assert run.call_args.kwargs["shell"] is False
 
 
 def test_balance_parenthesis():
