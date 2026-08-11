@@ -6,6 +6,7 @@ import chromadb
 import openai
 from   lib_llm_ext import initLocalEmbedding, useLocalEmbedding
 from src.logger import get_logger
+from config import config_get_by_key
 
 logger = get_logger(__name__)
 
@@ -139,7 +140,7 @@ def _chunk_markdown(text, filename):
 
 def openai_embed_batch(texts):
     """Embed a list of texts via OpenAI. Returns list of float vectors."""
-    proxy_url = os.environ.get("GATEWAY_URL")
+    proxy_url = config_get_by_key("GATEWAY_URL")
     if proxy_url:
         client = openai.OpenAI(base_url=f"{proxy_url.rstrip('/')}/openai/", api_key="unused")
     else:
@@ -149,6 +150,12 @@ def openai_embed_batch(texts):
     except Exception as e:
         raise RuntimeError(f"Embedding request failed: {e}") from e
     return [item.embedding for item in resp.data]
+
+
+def openai_embed(text):
+    """Embed one runtime memory string via the configured OpenAI route."""
+    return openai_embed_batch([text])[0]
+
 
 def local_embed_batch(texts):
     """Embed a list of texts via lib_llm_ext local embeddings."""

@@ -45,16 +45,10 @@
 (= (embed $str)
    (if (== (embeddingprovider) Local)
        (py-call (lib_llm_ext.useLocalEmbedding (string-safe $str)))
-       (useGPTEmbedding (string-safe $str))))
+       (py-call (rag.openai_embed (string-safe $str)))))
 
 (= (appendToHistory $addition)
-   (let $history_file
-         (library OmegaClaw-Core ./memory/history.metta)
-     (progn
-         (if (exists-file $history_file)
-            ()
-            (write-file $history_file ""))
-         (append-file $history_file (swrite $addition)))))
+   (append-file-raw (library OmegaClaw-Core ./memory/history.metta) (swrite $addition)))
 
 (= (remember $str)
    (progn (py-call (lib_chromadb.remember $str (embed $str) (get_time_as_string)))

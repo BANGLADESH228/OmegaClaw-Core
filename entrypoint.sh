@@ -10,10 +10,10 @@ nginx_url() {
 
 cd /PeTTa
 
-GATEWAY_URL="http://localhost:8080"
 EMBEDDING_PROVIDER="${EMBEDDING_PROVIDER:-Local}"
 OPENAIAPI_URL="http://localhost:8080/" # dummy value
 MM_URL="http://localhost:8080/" # dummy value
+OPENCLAW_URL="http://localhost:8080/" # dummy value
 for arg in "$@"; do
   if [[ "$arg" == embeddingprovider=* ]]; then
     EMBEDDING_PROVIDER="${arg#*=}"
@@ -26,8 +26,12 @@ for arg in "$@"; do
   if [[ "$arg" == MM_URL=* ]]; then
     MM_URL=$(nginx_url "${arg#*=}")
   fi
+  # URL to redirect OpenClaw Gateway requests
+  if [[ "$arg" == openclaw_url=* ]]; then
+    OPENCLAW_URL=$(nginx_url "${arg#*=}")
+  fi
 done
-export GATEWAY_URL EMBEDDING_PROVIDER OPENAIAPI_URL MM_URL
+export EMBEDDING_PROVIDER OPENAIAPI_URL MM_URL OPENCLAW_URL
 
 su www-data -s /bin/sh -c "sh /opt/nginx/nginx.sh"
 
@@ -38,7 +42,7 @@ fi
 
 # Scrub environment: only allowlisted vars survive.
 SAFE_VARS="HOME USER PATH HOSTNAME TERM LANG LC_ALL \
-  GATEWAY_URL PYTHONDONTWRITEBYTECODE PYTHONUNBUFFERED \
+  PYTHONDONTWRITEBYTECODE PYTHONUNBUFFERED \
   HF_HOME SENTENCE_TRANSFORMERS_HOME HF_HUB_OFFLINE TRANSFORMERS_OFFLINE \
   OMEGACLAW_DIR MEMORY_DIR TEST_SERVER_IP"
 
@@ -50,4 +54,4 @@ for var in $SAFE_VARS; do
   fi
 done
 
-exec env -i $env_args su nobody -s /bin/sh -c "sh run.sh run.metta $*"
+exec env -i $env_args su nobody -s /bin/sh -c "sh run.sh run.metta GATEWAY_URL="http://localhost:8080" $*"
