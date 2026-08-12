@@ -93,7 +93,7 @@ jobs:
 
       - name: Verify version in release image
         run: |
-          expected="OmegaClaw $(git describe --tags --dirty --always)"
+          expected="OmegaClaw version=$(git describe --tags --dirty --always)"
           test "$(./scripts/omegaclaw --version)" = "$expected"
           actual="$(docker run --rm \
             --entrypoint /PeTTa/repos/OmegaClaw-Core/scripts/omegaclaw \
