@@ -32,7 +32,9 @@ def llmProviderStart(provider):
     global _llmprovider
     _llmprovider = _llmProviderRegistry.get(provider, None)
     if _llmprovider is None:
-        _error("llmProviderStart", f"LLM provider plugin {provider} is not registered")
+        error = f"llmProviderStart: LLM provider plugin {provider} is not registered"
+        logger.error(error)
+        raise RuntimeError(error)
     _llmprovider.start()
 
 def llmProviderChat(prompt, max_tokens, reasoning_mode):

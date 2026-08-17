@@ -37,7 +37,9 @@ def commChannelStart(commchannel):
     global _commchannel
     _commchannel = _commChannelRegistry.get(commchannel, None)
     if _commchannel is None:
-        _error("commChannelStart", f"Communication channel plugin {commchannel} is not registered")
+        error = f"commChannelStart: Communication channel plugin {commchannel} is not registered"
+        logger.error(error)
+        raise RuntimeError(error)
     _commchannel.start()
 
 def commChannelReceive():
