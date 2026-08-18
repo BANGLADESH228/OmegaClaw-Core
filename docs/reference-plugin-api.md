@@ -1,39 +1,40 @@
 # Reference - Plugin API
 
-OmegaClaw provides the plugin API which allows writing plugins to extend the
-agent's functionality. Plugin is a MeTTa or Python module which provides the
-entry point - function `loadOmegaClawPlugin`. `loadOmegaClawPlugin` function
-calls OmegaClaw plugin API in order to implement new agent's features. Plugin
-API provides functions to:
+OmegaClaw provides a plugin API which allows writing plugins to extend the
+agent's functionality. A plugin is a MeTTa or Python module which provides the
+entry point function `loadOmegaClawPlugin`. 
+
+The`loadOmegaClawPlugin` function calls the OmegaClaw plugin API in order to 
+implement new agent's features. The plugin API provides functions to:
 - add communication channel integrations
 - add LLM provider integrations
 - add new skills or remove added skills
 - extend LLM prompt by adding new information or removing it
 - etc
 
-In order to be loaded the plugin should be included into
-[config/plugins.yaml](/config/plugins.yaml) file. Agent loads each module
-listed in this file on the start and calls an entry function of each loaded
-module. All communication channels and LLM integrations of the OmegaClaw are
+In order to be loaded the plugin should be included into the
+[config/plugins.yaml](/config/plugins.yaml) file. The agent loads each module
+listed in this file on start and calls an entry function of each loaded
+module. All communication channels and LLM integrations of OmegaClaw are
 implemented using this API. The full list of plugins available in the OmegaClaw
 repository can be found in the [config/plugins.yaml](/config/plugins.yaml)
 file.
 
-OmegaClaw plugin API is under construction. This is the reason why some APIs
-are available only as the Python modules and other only as the MeTTa modules.
+The OmegaClaw plugin API is under construction. This is the reason why some APIs
+are available only as the Python modules and others only as the MeTTa modules.
 Partially it is because writing some kinds of plugins is simpler using Python.
 
 ## Communication channel integration
 
 In order to implement new communication channel one should implement two main
 functions:
-- "receive" - returns the next message received through communication channel
-- "send" - sends the message through communication channel
+- "receive" - returns the next message received through the communication channel
+- "send" - sends the message through the communication channel
 
 ### Python
 
-In Python one should implement class which inherits from
-`channels.CommChannel` and implement at least two methods of the ancestor.
+In Python one should implement a class which inherits from
+`channels.CommChannel` and implements at least two methods of the ancestor.
 
 ```python
 import channels
@@ -53,7 +54,7 @@ class ExampleCommChannel(channels.CommChannel):
         print(f"ExampleCommChannel sends {message}")
 ```
 
-In order to be able using this communication channel the plugin code should
+In order to be able to use a new communication channel the plugin code should
 register the instance of the `ExampleCommChannel` in the system using
 `registerCommChannel` function.
 
@@ -75,17 +76,17 @@ sh run.sh run.metta commchannel=Example
 
 ## LLM provider integration
 
-In order to implement new LLM provider integration one should provide
+In order to implement a new LLM provider integration one should provide
 implementation of the single function `chat`. The function takes three
 parameters:
 - `prompt` - the string which is sent to LLM by agent as a prompt, required
-- `max_tokens` - maximum number of tokens can be used by provider to answer the
+- `max_tokens` - the maximum number of tokens can be used by provider to answer the
   prompt, default value is 6000
 - `reasoning_mode` - the reasoning mode of the LLM, default value is "medium"
 
 ### Python
 
-In Python one should implement class which inherits from
+In Python one should implement a class which inherits from
 `providers.LLMProvider` and implement at least one method of the ancestor.
 
 ```python
@@ -103,7 +104,7 @@ class ExampleLLMProvider(providers.LLMProvider):
         return "LLM answer example" 
 ```
 
-In order to be able using this LLM provider integration the plugin code should
+In order to be able to use this LLM provider integration the plugin code should
 register the instance of the `ExampleLLMProvider` in the system using
 `registerLLMProvider` function.
 
@@ -124,7 +125,7 @@ sh run.sh run.metta provider=Example
 
 ## Other agent related APIs
 
-Plugin can dynamically add new skills or modify the agent's prompt if it is
+A plugin can dynamically add new skills or modify the agent's prompt if it is
 required. This ability is provided by the following MeTTa functions:
 - `(add-skill $function $description $arguments)` - adds the skill
 - `(remove-skill $function)` - removes the skill by its function name
@@ -132,9 +133,9 @@ required. This ability is provided by the following MeTTa functions:
 - `(remove-prompt-extension $handle)` - removes text from the prompt by the
   handle
 
-One can look at [source code](/src/skills.metta) for detailed description.
-Please also look at [workflow plugin](/plugins/workflow/workflow.metta) for the
-example of usage.
+One can look at [source code](/src/skills.metta) for a detailed description.
+Please also look at [workflow plugin](/plugins/workflow/workflow.metta) for
+example usage.
 
 One can add the callback which is called on each main agent loop iteration:
 - `(add-heartbeat-listener $handle $callback)` - adds heartbeat listener
@@ -142,4 +143,4 @@ One can add the callback which is called on each main agent loop iteration:
 
 Callback is called once in the beginning of the each loop iteration and it has
 a single parameter which receives the iteration number. Please see [unit
-tests](/tests/src_skills.metta) for the example of usage.
+tests](/tests/src_skills.metta) for an example of usage.
