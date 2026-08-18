@@ -59,25 +59,28 @@ def _slack_unwrap(text):
 
 def _download_file(url, timeout=30):
     global _bot_token
+    # Only use genuine Slack file URLs.
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme == "https" and parsed.netloc in {"files.slack.com", "slack-files.com"}:
+        pass
+    else:
+        logger.warning(f"Refusing unexpected Slack file URL: {url}")
+        return None
     proxy = auth.get_proxy_url()
     if proxy:
         # Route private Slack file downloads through the local nginx credential proxy.
-        parsed = urllib.parse.urlparse(url)
-        # Only proxy genuine Slack file URLs.
-        if parsed.scheme != "https" or parsed.netloc != "files.slack.com":
-            logger.warning(f"Refusing unexpected Slack file URL: {url}")
-            return None
         # Preserve the original Slack path while switching to the local proxy endpoint.
         download_url = f"{proxy}/slack-files{parsed.path}"
         if parsed.query:
             download_url += f"?{parsed.query}"
-        logger.info(f"Downloading Slack attachment {download_url}")
+        logger.info(f"Downloading Slack attachment using proxy: {download_url}")
         req = urllib.request.Request(download_url, method="GET")
     else:
         # Direct mode requires the real Slack bot token.
         if not _bot_token:
             logger.warning("Slack bot token is not available")
             return None
+        logger.info(f"Downloading Slack attachment directly: {url}")
         req = urllib.request.Request(url, headers={"Authorization": f"Bearer {_bot_token}"}, method="GET")
     # Fetch the attachment and reject login/error HTML returned in place of file data.
     with urllib.request.urlopen(req, timeout=timeout) as response:
@@ -88,7 +91,7 @@ def _download_file(url, timeout=30):
         try:
             attach = response.read()
         except:
-            logger.warning(f"Slack file download failed: {download_url}")
+            logger.exception(f"Slack file download failed: {url}")
             attach = None
         return attach
         
