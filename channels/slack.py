@@ -432,9 +432,11 @@ def _poll_channel(channel_id):
                                     logger.exception(f"Failed to save Slack attachment: {exc}")
                                     file_info.append(f"[ATTACHMENT DOWNLOAD FAILED: {name} {exc}]")
                             else:
-                                file_info.append(f"[ATTACHMENT DOWNLOAD FAILED: {name}]")
+                                file_info.append(f"[ATTACHMENT DOWNLOAD FAILED, NO DATA: {name}]")
                         else:
                             file_info.append(f"[ATTACHMENT DOWNLOAD SIZE TOO LARGE, FAILED: {name} Size: {size}]")
+                    else:
+                        file_info.append(f"[ATTACHMENT DOWNLOAD BAD URL, FAILED: {name} url: {url}]")
                 if text:
                     text = text + "\n" + "\n".join(file_info)
                 else:
