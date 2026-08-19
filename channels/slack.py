@@ -38,7 +38,7 @@ _outbox = PendingMessages()
 
 _SL_URL = "https://slack.com"
 
-SL_MAX_FILE_SIZE_MB = int(config_get_by_key("SL_MAX_FILE_SIZE_MB", 1))
+SL_MAX_FILE_SIZE_MB = int(config_get_by_key("SL_MAX_FILE_SIZE_MB", 5))
 SL_MAX_FILE_SIZE_BYTES = SL_MAX_FILE_SIZE_MB * 1024 * 1024
 
 class _SlackRateLimitError(Exception):
