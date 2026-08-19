@@ -38,6 +38,9 @@ _outbox = PendingMessages()
 
 _SL_URL = "https://slack.com"
 
+SL_MAX_FILE_SIZE_MB = int(config_get_by_key("SL_MAX_FILE_SIZE_MB", 1))
+SL_MAX_FILE_SIZE_BYTES = SL_MAX_FILE_SIZE_MB * 1024 * 1024
+
 class _SlackRateLimitError(Exception):
     def __init__(self, retry_after):
         super().__init__(f"Slack rate limited (retry after {retry_after}s)")
@@ -376,6 +379,8 @@ def _poll_channel(channel_id):
 
     ordered = sorted(messages, key=lambda m: float(m.get("ts", 0.0)))
     max_ts = oldest
+
+    # Process each received message including attachments while minding user authentication rules
     for message in ordered:
         ts = str(message.get("ts", "")).strip()
         if ts:
@@ -384,32 +389,11 @@ def _poll_channel(channel_id):
         # Ignore bot/system messages and process regular user text.
         if message.get("subtype") and message.get("subtype") != "file_share":
             continue
-
+        # retrieve text for this message
         text = _slack_unwrap(str(message.get("text", "")).strip())
+        # retrieve attachment information for this message (just the info, not the attachment data!)
         files = message.get("files") or []
-        if files:
-            file_info = []
-            for f in files:
-                name = f.get("name", "unknown")
-                url = f.get("url_private_download") or f.get("url_private", "")
-                mime = f.get("mimetype", "")
-                size = f.get("size", 0)
-                file_info.append(f"[ATTACHMENT: {name} | {mime} | {size} bytes | {url}]")
-                # Download file content to /tmp for agent access
-                if url:
-                    file_data = _download_file(url, timeout=30)
-                    if file_data:
-                        safe_name = name.replace("/", "_")
-                        tmp_path = f"/tmp/slack_attachment_{safe_name}"
-                        with open(tmp_path, "wb") as fh:
-                            fh.write(file_data)
-                        file_info.append(f"[SAVED: {tmp_path}]")
-                    else:
-                        file_info.append(f"[ATTACHMENT DOWNLOAD FAILED: {name}]")
-            if text:
-                text = text + "\n" + "\n".join(file_info)
-            else:
-                text = "\n".join(file_info)
+
         user_id = str(message.get("user", "")).strip()
         if not user_id:
             continue
@@ -424,6 +408,38 @@ def _poll_channel(channel_id):
         state = _is_allowed_message(channel_id, user_id, text)
         display_name = _get_display_name(user_id)
         if state == "allow":
+            # after user validated, read attachments
+            if files:
+                file_info = []
+                for f in files:
+                    name = f.get("name", "unknown")
+                    url = f.get("url_private_download") or f.get("url_private", "")
+                    mime = f.get("mimetype", "")
+                    size = f.get("size", 0)
+                    file_info.append(f"[ATTACHMENT: {name} | {mime} | {size} bytes | {url}]")
+                    # Download content to /tmp for agent access, check file size first -- must be below maximum.
+                    if url:
+                        if size <= SL_MAX_FILE_SIZE_BYTES:
+                            file_data = _download_file(url, timeout=30)
+                            if file_data:
+                                safe_name = name.replace("/", "_")
+                                tmp_path = f"/tmp/slack_attachment_{safe_name}"
+                                try:
+                                    with open(tmp_path, "wb") as fh:
+                                        fh.write(file_data)
+                                    file_info.append(f"[SAVED: {tmp_path}]")
+                                except Exception as exc:
+                                    logger.exception(f"Failed to save Slack attachment: {exc}")
+                                    file_info.append(f"[ATTACHMENT DOWNLOAD FAILED: {name} {exc}]")
+                            else:
+                                file_info.append(f"[ATTACHMENT DOWNLOAD FAILED: {name}]")
+                        else:
+                            file_info.append(f"[ATTACHMENT DOWNLOAD SIZE TOO LARGE, FAILED: {name} Size: {size}]")
+                if text:
+                    text = text + "\n" + "\n".join(file_info)
+                else:
+                    text = "\n".join(file_info)
+
             _set_last(f"<@{user_id}> ({display_name}): {text}")
         elif state == "auth_bound":
             send_message(f"Authentication successful for {display_name}.")
