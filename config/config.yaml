@@ -10,7 +10,7 @@ spamShield: False
 sleepInterval: 1
 # LLM model to load overrides *_model parameters see below
 #model: 
-# LLM provider, see the list below in the Providers section
+# LLM provider id, see the list below in the Providers section
 provider: Anthropic
 # Output cap passed to the provider
 maxOutputToken: 6000
@@ -46,7 +46,7 @@ securityPolicyPath: "./repos/OmegaClaw-Core/profile/policy.yaml"
 
 # Channels
 
-# Type of the communication channel for agent to use
+# Identifier of the communication channel for agent to use
 # see the list below
 commchannel: irc
 

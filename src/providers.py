@@ -20,7 +20,13 @@ class LLMProvider:
         raise NotImplementedError()
 
 def registerLLMProvider(id: str, provider: LLMProvider) -> None:
-    """Register LLM provider in the registry"""
+    """
+    Register LLM provider in the registry.
+
+    Arguments:
+    id: the identifier of the plugin which is used to load it
+    provider: the implementation of the provider
+    """
     global _llmProviderRegistry
     logger.info(f"registerLLMProvider: registering LLM provider {id}")
     _llmProviderRegistry[id] = provider

@@ -24,7 +24,13 @@ class CommChannel:
         raise NotImplementedError()
 
 def registerCommChannel(id: str, channel: CommChannel) -> None:
-    """Register communication channel in the registry"""
+    """
+    Register communication channel in the registry.
+
+    Arguments:
+    id: the identifier of the plugin which is used to load it
+    channel: the implementation of the channel
+    """
     global _commChannelRegistry
     logger.info(f"registerCommChannel: registering communication channel {id}")
     _commChannelRegistry[id] = channel

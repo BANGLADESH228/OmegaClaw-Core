@@ -4,7 +4,7 @@ OmegaClaw provides a plugin API which allows writing plugins to extend the
 agent's functionality. A plugin is a MeTTa or Python module which provides the
 entry point function `loadOmegaClawPlugin`. 
 
-The`loadOmegaClawPlugin` function calls the OmegaClaw plugin API in order to 
+The `loadOmegaClawPlugin` function calls the OmegaClaw plugin API in order to 
 implement new agent's features. The plugin API provides functions to:
 - add communication channel integrations
 - add LLM provider integrations
@@ -63,12 +63,15 @@ def loadOmegaClawPlugin():
     channels.registerCommChannel("Example", ExampleCommChannel())
 ```
 
+`"Example"` is an identifier of the communication channel which is used in
+`commchannel` configuration parameter to load the plugin. Please note that
+plugin identifier is not necessary equal to the plugin module name.
+
 ### Using communication channel
 
-The first parameter of the `registerCommChannel` function is a channel id which
-should be used as a value for the `commchannel` command line parameter to use
-the communication channel with the agent (see
-[README.md](/README.md#configuration-options)):
+The communication channel identifier should be used as the value for the
+`commchannel` command line parameter to use the communication channel with the
+agent (see [README.md](/README.md#configuration-options)):
 
 ```sh
 sh run.sh run.metta commchannel=Example
@@ -113,11 +116,15 @@ def loadOmegaClawPlugin():
     providers.registerLLMProvider("Example", ExampleLLMProvider())
 ```
 
+`"Example"` is an identifier of the LLM provider which is used in `provider`
+configuration parameter to load the plugin. Please note that plugin identifier
+is not necessary equal to the plugin module name.
+
 ### Using LLM provider
 
-The first parameter of the `registerLLMProvider` function is a provider id which
-should be used as a value for the `provider` command line parameter to use
-the LLM provider with the agent (see [README.md](/README.md#configuration-options)):
+The LLM provider identifier should be used as the value for the `provider`
+configuration parameter to use the LLM provider with the agent (see
+[README.md](/README.md#configuration-options)):
 
 ```sh
 sh run.sh run.metta provider=Example
