@@ -33,9 +33,20 @@ module. The plugin record has the following fields:
     loaded. Can include `{REPO}` placeholder to designate the root folder of
     the OmegaClaw source repository.
 
-The OmegaClaw plugin API is under construction. This is the reason why some APIs
-are available only as the Python modules and others only as the MeTTa modules.
-Partially it is because writing some kinds of plugins is simpler using Python.
+The OmegaClaw plugin API is under construction. This is the reason why some
+APIs are available only as the Python modules and others only as the MeTTa
+modules. Partially it is because writing some kinds of plugins is simpler using
+Python.
+
+Another issue is that it is difficult to run plugins inside Docker container.
+There are two ways of doing this:
+  1. Build fresh image including plugin's code and modified `plugin.yaml`
+     configuration file.
+  2. Mount the plugin's code and modified `plugin.yaml` configuration file into
+     the container using custom `docker run` command.
+
+This document doesn't describe using Docker in details it is a subject to the
+future OmegaClaw improvements.
 
 ## Communication channel integration
 
@@ -86,6 +97,9 @@ The communication channel identifier should be used as the value for the
 `commchannel` command line parameter to use the communication channel with the
 agent (see [README.md](/README.md#configuration-options)):
 
+For example one can use the following command to run the agent using `Example`
+as the communication plugin. This command requires OmegaClaw to be installed in
+the system first (see [README.md](/README.md#installation)):
 ```sh
 sh run.sh run.metta commchannel=Example
 ```
@@ -139,6 +153,9 @@ The LLM provider identifier should be used as the value for the `provider`
 configuration parameter to use the LLM provider with the agent (see
 [README.md](/README.md#configuration-options)):
 
+For example one can use the following command to run the agent using `Example`
+as the LLM provider plugin. This command requires OmegaClaw to be installed in
+the system first (see [README.md](/README.md#installation)):
 ```sh
 sh run.sh run.metta provider=Example
 ```
