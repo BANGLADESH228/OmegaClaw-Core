@@ -14,11 +14,24 @@ implement new agent's features. The plugin API provides functions to:
 
 In order to be loaded the plugin should be included into the
 [config/plugins.yaml](/config/plugins.yaml) file. The agent loads each module
-listed in this file on start and calls an entry function of each loaded
-module. All communication channels and LLM integrations of OmegaClaw are
-implemented using this API. The full list of plugins available in the OmegaClaw
-repository can be found in the [config/plugins.yaml](/config/plugins.yaml)
-file.
+listed in this file on start and calls `loadOmegaClawPlugin` entry function of
+each loaded module. All communication channels and LLM integrations of
+OmegaClaw are implemented using this API. The full list of plugins available in
+the OmegaClaw repository can be found in the
+[config/plugins.yaml](/config/plugins.yaml) file.
+
+Plugin can be implemented as a MeTTa module, a single Python file or a Python
+module. The plugin record has the following fields:
+  - `name` (required) - each plugin should have an unique name. In case of
+    MeTTa plugin `name` is the name of the MeTTa module. In case of Python
+    plugin `name` is the name of the Python file (without `.py` extension) or
+    Python module.
+  - `loader` (required) - possible values are `metta` or `python`. The runtime
+    which should be used to load the plugin.
+  - `location` (optional) - must be specified if plugin is a single Python
+    file or MeTTa module. In such case it provides the path to the module be
+    loaded. Can include `{REPO}` placeholder to designate the root folder of
+    the OmegaClaw source repository.
 
 The OmegaClaw plugin API is under construction. This is the reason why some APIs
 are available only as the Python modules and others only as the MeTTa modules.
