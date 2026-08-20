@@ -9,11 +9,11 @@ class CommChannel:
 
     def start(self) -> None:
         """Configure and start communication channel"""
-        raise NotImplementedError()
+        pass
 
     def stop(self) -> None:
         """Stop communication channel and free resources"""
-        raise NotImplementedError()
+        pass
 
     def receive(self) -> str:
         """Receive message from the communication channel"""

@@ -9,11 +9,11 @@ class LLMProvider:
 
     def start(self) -> None:
         """Configure and start LLM provider"""
-        raise NotImplementedError()
+        pass
 
     def stop(self) -> None:
         """Stop and LLM provider and free resources"""
-        raise NotImplementedError()
+        pass
 
     def chat(self, prompt: str, max_tokens: int = 6000, reasoning_mode: str = "medium") -> str:
         """Chat with LLM provider"""
