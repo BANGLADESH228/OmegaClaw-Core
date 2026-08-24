@@ -62,6 +62,10 @@ User-facing MeTTa skills the agent invokes. Each page follows the template **Sig
 
 - [reference-plugin-api.md](./reference-plugin-api.md) - Plugin API documentation
 
+### Plugin publishing
+
+- [reference-plugins-publishing.md](./reference-plugins-publishing.md) — how to submit a plugin for the catalog
+
 ### Internals
 
 - [reference-internals-loop.md](./reference-internals-loop.md) — `src/loop.metta` lifecycle and turn structure
