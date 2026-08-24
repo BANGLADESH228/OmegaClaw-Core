@@ -18,7 +18,7 @@ a plugin for inclusion in the official catalog.
 ## Resources
 
 - [Unified Plugin Catalog](https://github.com/asi-alliance/OmegaClaw-Core/wiki/Omega-Plugins-Spreadsheet) — complete list of available plugins with links and descriptions.
-- [Plugin Development Guide](https://github.com/asi-alliance/OmegaClaw-Core/tree/main/docs) — detailed instructions for creating a plugin using the OmegaClaw API.
+- [Plugin Development Guide](./reference-plugin-api.md) — detailed instructions for creating a plugin using the OmegaClaw API.
 - [Submit a Plugin](https://github.com/asi-alliance/OmegaClaw-Core/issues/new/choose) — open a new Issue with the Plugin addition request template.
 
 > **Note:** The canonical plugin list lives in the Wiki. This page
