@@ -44,10 +44,10 @@ Python.
 
 Another issue is that it is difficult to run plugins inside Docker container.
 There are two ways of doing this:
-  1. Build fresh image including plugin's code and modified `plugin.yaml`
-     configuration file.
-  2. Mount the plugin's code and modified `plugin.yaml` configuration file into
-     the container using custom `docker run` command.
+  1. Build fresh image including plugin's code and modified
+     `config/plugins.yaml` configuration file.
+  2. Mount the plugin's code and modified `config/plugins.yaml` configuration
+     file into the container using custom `docker run` command.
 
 This document doesn't describe using Docker in details it is a subject to the
 future OmegaClaw improvements.
@@ -124,8 +124,8 @@ parameters:
 - `reasoning_mode` - the reasoning mode of the LLM, default value is "medium"
 
 LLM provider integration should be implemented as a Python class. Inherit the
-class which from `providers.LLMProvider` and implement at least one method of
-the ancestor.
+class from `providers.LLMProvider` and implement at least one method of the
+ancestor.
 
 ```python
 import providers
