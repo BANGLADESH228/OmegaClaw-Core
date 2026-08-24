@@ -28,10 +28,10 @@ module. The plugin record has the following fields:
     Python module.
   - `loader` (required) - possible values are `metta` or `python`. The runtime
     which should be used to load the plugin.
-  - `location` (optional) - must be specified if plugin is a single Python
-    file or MeTTa module. In such case it provides the path to the module be
-    loaded. Can include `{REPO}` placeholder to designate the root folder of
-    the OmegaClaw source repository.
+  - `location` (optional) - must be specified if plugin is a single Python file
+    or MeTTa module. In such case it provides the path to the directory where
+    `name` module is located. Can include `{REPO}` placeholder to designate the
+    root folder of the OmegaClaw source repository.
 
 The OmegaClaw plugin API is under construction. This is the reason why some
 APIs are available only as the Python modules and others only as the MeTTa
@@ -49,6 +49,10 @@ This document doesn't describe using Docker in details it is a subject to the
 future OmegaClaw improvements.
 
 ## Communication channel integration
+
+Each plugin can register more than one communication channel. Each
+communication channel must have an unique id which is used as the value of the
+`commchannel` configuration parameter in order to enable the channel.
 
 In order to implement new communication channel one should implement two main
 functions:
@@ -87,9 +91,7 @@ def loadOmegaClawPlugin():
     channels.registerCommChannel("Example", ExampleCommChannel())
 ```
 
-`"Example"` is an identifier of the communication channel which is used in
-`commchannel` configuration parameter to load the plugin. Please note that
-plugin identifier is not necessary equal to the plugin module name.
+Here `"Example"` is an identifier of the communication channel.
 
 ### Using communication channel
 
@@ -105,6 +107,10 @@ sh run.sh run.metta commchannel=Example
 ```
 
 ## LLM provider integration
+
+Each plugin can register more than one LLM provider. Each LLM provider must
+have an unique id which is used as the value of the `provider` configuration
+parameter in order to enable the provider.
 
 In order to implement a new LLM provider integration one should provide
 implementation of the single function `chat`. The function takes three
@@ -143,9 +149,7 @@ def loadOmegaClawPlugin():
     providers.registerLLMProvider("Example", ExampleLLMProvider())
 ```
 
-`"Example"` is an identifier of the LLM provider which is used in `provider`
-configuration parameter to load the plugin. Please note that plugin identifier
-is not necessary equal to the plugin module name.
+Here `"Example"` is an identifier of the LLM provider.
 
 ### Using LLM provider
 
