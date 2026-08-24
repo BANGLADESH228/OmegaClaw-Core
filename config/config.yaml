@@ -51,6 +51,7 @@ securityPolicyPath: "./repos/OmegaClaw-Core/profile/policy.yaml"
 commchannel: irc
 
 # IRC
+#commchannel=irc
 # IRC channel to join 
 IRC_channel: "##omegaclaw"
 # IRC server hostname
@@ -61,12 +62,14 @@ IRC_port: 6667
 IRC_user: "omegaclaw"
 
 # Mattermost
+#commchannel=mattermost
 # Mattermost base URL.
 MM_URL: "https://chat.singularitynet.io"
 # Mattermost channel ID.
 MM_CHANNEL_ID: "8fjrmabjx7gupy7e5kjznpt5qh"
 
 # Slack
+#commchannel=slack
 # Slack channel ID (for example `C0123456789`). If empty, OmegaClaw auto-binds on first successful auth message.
 SL_CHANNEL_ID: ""
 # Slack polling interval in seconds (minimum effective value is 60).
@@ -75,20 +78,26 @@ SL_POLL_INTERVAL: 60
 SL_MAX_FILE_SIZE_MB: 5
 
 # Telegram
+#commchannel=telegram
 # Telegram chat ID. If empty, OmegaClaw auto-binds after first valid inbound auth/message.
 TG_CHAT_ID: ""
 # Telegram polling timeout in seconds.
 TG_POLL_TIMEOUT: 20
 
-# WSchat
+# Websocket
+#commchannel=websocket
 # WebSocket endpoint URL (`ws://` or `wss://`). Required when `commchannel=websocket`.
 WS_URL: ""
 # Optional bearer token sent as `Authorization: Bearer <token>`.
 WS_TOKEN: ""
 
+# Mock channel
+#commchannel=test
+
 # Providers
 
 # OpenAIAPI
+#provider=OpenAIAPI
 # Name of the API key variable to read
 api_token_var: "OPENAIAPI_API_KEY"
 # LLM endpoint URL.
@@ -97,14 +106,17 @@ openaiapi_url: "http://localhost:11434/v1/"
 openaiapi_model: "qwen3.5:9b"
 
 # ASICloud
+#provider=ASICloud
 # Default model
 asicloud_model: "minimax/minimax-m3"
 
 # Anthropic
+#provider=Anthropic
 # Default model
 anthropic_model: "claude-opus-4-8"
 
 # OpenRouter
+#provider=OpenRouter
 # Default model
 openrouter_model: "z-ai/glm-5.2"
 # Overrides session id
@@ -113,14 +125,19 @@ openrouter_model: "z-ai/glm-5.2"
 OPENROUTER_CACHE_TTL: 5m
 
 # OpenAI
+#provider=OpenAI
 # Default model
 openai_model: "gpt-5.5"
 # Overrides prompt cache key
 #OPENAI_PROMPT_CACHE_KEY:
 
 # ASIOne
+#provider=ASIOne
 # Default model
 asione_model: "asi1-ultra"
+
+# Mock provider
+#provider=Test
 
 # Skills
 
