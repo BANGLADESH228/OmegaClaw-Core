@@ -71,6 +71,8 @@ MM_CHANNEL_ID: "8fjrmabjx7gupy7e5kjznpt5qh"
 SL_CHANNEL_ID: ""
 # Slack polling interval in seconds (minimum effective value is 60).
 SL_POLL_INTERVAL: 60
+# Slack maximum attachment size to download, in MB.
+SL_MAX_FILE_SIZE_MB: 5
 
 # Telegram
 # Telegram chat ID. If empty, OmegaClaw auto-binds after first valid inbound auth/message.
@@ -122,12 +124,6 @@ asione_model: "asi1-ultra"
 
 # Skills
 
-# agentverse
-# AgentVerse address of the Technical analysis agent
-TECHNICAL_ANALYSIS_AGENT_ADDRESS: "agent1q085746wlr3u2uh4fmwqplude8e0w6fhrmqgsnlp49weawef3ahlutypvu6"
-# AgentVerse address of the Tavily search agent
-TAVILY_SEARCH_AGENT_ADDRESS: "agent1qt5uffgp0l3h9mqed8zh8vy5vs374jl2f8y0mjjvqm44axqseejqzmzx9v8"
-
 # Plugins
 
 # Workflow
@@ -138,3 +134,12 @@ TAVILY_SEARCH_AGENT_ADDRESS: "agent1qt5uffgp0l3h9mqed8zh8vy5vs374jl2f8y0mjjvqm44
 # Path to the directory to keep workflow working files when workflow is active.
 # Default value is <memoryDirectory>/workflow_space
 #pluginWorkflowMemoryDir: ./memory/workflow_space
+
+# OpenClaw
+openClawEnabled: disabled
+# In Docker, openClawURL is only a fallback: the real Gateway target and its
+# token are set at container start (openclaw_url=, OMEGACLAW_OPENCLAW_TOKEN)
+# and injected by the local Nginx proxy, so the agent never sees the token.
+# See plugins/openclaw/README.md.
+openClawURL: "http://172.17.0.1:18789"
+openClawAgent: "main"

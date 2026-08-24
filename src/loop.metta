@@ -17,7 +17,8 @@
           (configure maxOutputToken 6000)
           (configure reasoningMode medium)
           (configure wakeupInterval 600) ;600=10 minutes
-          (configure memoryDirectory ./)
+          (configure memoryDirectory
+               (joinPath ((py-call (helper.projectRootDirectory)) memory)))
           (change-state! &prevmsg "")
           (change-state! &lastresults "")
           (change-state! &loops (maxNewInputLoops))
@@ -39,7 +40,7 @@
                          " toolName4 arg4" (newline)
                          " toolName5 arg5" (newline)
                          " SAVE_PERMANENT_FILES_DIR: " (memoryDirectory)
-                         " LAST_SKILL_USE_RESULTS: you must rectify ALERT_FAILED skill use cases " (last_chars (get-state &lastresults) (maxFeedback)) 
+                         " LAST_SKILL_USE_RESULTS: " (last_chars (get-state &lastresults) (maxFeedback))
                          " HISTORY: " (getHistory) 
                          " TIME: " (get_time_as_string)))))
 
@@ -91,7 +92,11 @@
                                        ($mcerr (HandleError MULTI_COMMAND_FAILURE_NOTHING_WAS_DONE_PLEASE_CORRECT_PARENTHESES_AND_USE_QUOTES_AND_RETRY $response $sexpr))
                                        ($_ (log INFO "loop" (RESPONSE: $sexpr)))
                                        ($results (if (== $mcerr $sexpr)
-                                                      (RESULTS: (collapse (let $s (superpose $sexpr) (COMMAND_RETURN: ($s (HandleError SINGLE_COMMAND_ERROR_NOTHING_WAS_DONE_PLEASE_FIX_AND_RETRY $s (catch (let $R (eval $s) (py-call (helper.normalize_string $R))))))))))
+                                                      (RESULTS: (collapse (let $s (superpose $sexpr)
+                                                                           (let $precheck (HandleError UNKNOWN_SKILL_CALL $s $s)
+                                                                             (COMMAND_RETURN: ($s (if (== $precheck $s)
+                                                                                                    (HandleError SINGLE_COMMAND_ERROR_NOTHING_WAS_DONE_PLEASE_FIX_AND_RETRY $s (catch (let $R (eval $s) (py-call (helper.normalize_string $R)))))
+                                                                                                    $precheck)))))))
                                                       (RESULTS: $mcerr)))
                                        ($_ (log INFO "loop" (RESPONSE: $results))))
                                       (progn (if (or $msgnew  (not (== $sexpr ()))) (addToHistory $msg $response $sexpr $msgnew) _)
