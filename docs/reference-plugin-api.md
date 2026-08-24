@@ -33,6 +33,10 @@ module. The plugin record has the following fields:
     `name` module is located. Can include `{REPO}` placeholder to designate the
     root folder of the OmegaClaw source repository.
 
+As an example of a MeTTa plugin one can look at the code of the [workflow
+plugin](/plugins/workflow/workflow.metta). As an example of a Python plugin
+one can look at the code of the [IRC communication channel](/channels/irc.py).
+
 The OmegaClaw plugin API is under construction. This is the reason why some
 APIs are available only as the Python modules and others only as the MeTTa
 modules. Partially it is because writing some kinds of plugins is simpler using
@@ -59,10 +63,9 @@ functions:
 - "receive" - returns the next message received through the communication channel
 - "send" - sends the message through the communication channel
 
-### Python
-
-In Python one should implement a class which inherits from
-`channels.CommChannel` and implements at least two methods of the ancestor.
+Communication channel integration should be implemented as a Python class.
+Inherit the class from `channels.CommChannel` and implement at least two
+methods of the ancestor.
 
 ```python
 import channels
@@ -120,10 +123,9 @@ parameters:
   prompt, default value is 6000
 - `reasoning_mode` - the reasoning mode of the LLM, default value is "medium"
 
-### Python
-
-In Python one should implement a class which inherits from
-`providers.LLMProvider` and implement at least one method of the ancestor.
+LLM provider integration should be implemented as a Python class. Inherit the
+class which from `providers.LLMProvider` and implement at least one method of
+the ancestor.
 
 ```python
 import providers
