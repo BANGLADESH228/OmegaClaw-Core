@@ -1,3 +1,5 @@
+# Reference — Plugin Publishing
+
 The OmegaClaw plugin registry is managed through the project Wiki and
 the GitHub Issues tracker. The process below describes how to submit
 a plugin for inclusion in the official catalog.

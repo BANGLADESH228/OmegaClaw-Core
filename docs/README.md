@@ -58,9 +58,9 @@ User-facing MeTTa skills the agent invokes. Each page follows the template **Sig
 - [reference-channels.md](./reference-channels.md) — IRC, Telegram, Slack, Mattermost, WebSocket, and websearch adapters plus the channel contract
 - [reference-python-bridges.md](./reference-python-bridges.md) — `lib_llm_ext.py`, `src/helper.py`, `src/skills.pl`
 
-### Plugin API
+### Plugin publishing
 
-- [reference-plugins-publishing.md](./reference-plugins-publishing.md) - Plugin publishing documentation
+- [reference-plugins-publishing.md](./reference-plugins-publishing.md) — how to submit a plugin for the catalog
 
 ### Internals
 
