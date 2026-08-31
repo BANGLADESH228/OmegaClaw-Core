@@ -41,9 +41,8 @@ sudo apt-get install git python3 python3-dev python3-pip python3-venv build-esse
 
 Get [SWI-Prolog 10.0.2 or later](https://www.swi-prolog.org/).
 
-> **Note.** The `singnet/Omega` repository and the `singularitynet/omega` image are part of an
-> in-progress rename. Until they are published, use `singnet/Omega` and
-> `singularitynet/omega` in the commands below.
+> **Note.** `singnet/Omega` and `singularitynet/omega` are not published yet. The commands below
+> start working once the repository move and the Docker Hub repository are in place.
 
 Install Omega:
 ```
@@ -83,7 +82,7 @@ curl -fsSL https://raw.githubusercontent.com/singnet/Omega/refs/heads/main/scrip
 
 To run a specific version of Omega set version in `TAG` environment variable and run the following command:
 ```
-export TAG=v0.1.17; curl -fsSL  https://github.com/singnet/Omega/raw/refs/tags/$TAG/scripts/omega | bash -s -- singularitynet/omega:$TAG
+export TAG=<version>; curl -fsSL  https://github.com/singnet/Omega/raw/refs/tags/$TAG/scripts/omega | bash -s -- singularitynet/omega:$TAG
 ```
 
 To stop the Omega Docker container:
