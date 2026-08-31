@@ -4,10 +4,6 @@ Omega provides a plugin API which allows writing plugins to extend the
 agent's functionality. A plugin is a MeTTa or Python module which provides the
 entry point function `loadOmegaPlugin`. 
 
-Plugins written before the project was renamed used `loadOmegaClawPlugin` as the
-entry point. That name is still accepted, but it is deprecated and will be removed;
-rename it to `loadOmegaPlugin`.
-
 The `loadOmegaPlugin` function calls the Omega plugin API in order to 
 implement new agent's features. The plugin API provides functions to:
 - add communication channel integrations
