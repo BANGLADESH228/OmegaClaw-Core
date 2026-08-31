@@ -41,9 +41,6 @@ sudo apt-get install git python3 python3-dev python3-pip python3-venv build-esse
 
 Get [SWI-Prolog 10.0.2 or later](https://www.swi-prolog.org/).
 
-> **Note.** The `singularitynet/omega` image is not published yet. The Docker commands below
-> start working once it is.
-
 Install Omega:
 ```
 git clone https://github.com/trueagi-io/PeTTa
