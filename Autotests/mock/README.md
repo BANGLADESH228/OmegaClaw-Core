@@ -2,7 +2,7 @@
 
 This section describes how to bring up a local Omega container running with the deterministic LLM mock and run the `test_*_mock.py` suite against it.
 
-For the live-provider counterpart (real LLM, grading scheme, parameters table) see `Autotests/README_live.pdf`.
+For the live-provider counterpart (real LLM, grading scheme, parameters table) see `Autotests/README_live.md`.
 
 ## 1. Prerequisites
 

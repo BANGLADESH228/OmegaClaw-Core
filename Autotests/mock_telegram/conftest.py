@@ -84,7 +84,7 @@ def tg():
     if not driver_token:
         pytest.skip(
             "Telegram autotests require TG_DRIVER_TOKEN env var "
-            "(see Autotests/mock_telegram/README.pdf)"
+            "(see Autotests/mock_telegram/README.md)"
         )
     agent_username = os.environ.get("TG_AGENT_USERNAME")
     if not agent_username:
