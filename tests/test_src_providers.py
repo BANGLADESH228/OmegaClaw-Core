@@ -106,6 +106,40 @@ def test_error_text_is_escaped_in_sexpr():
     assert llmToolCallToSExpr(call) == '(call#0 (Error (foo) "Invalid \\\\uXXXX escape: \\"x\\""))'
 
 
+def test_get_tools_does_not_deduplicate_tools():
+    tools = getTools([("send", "Send v1", ["content"]),
+                      ("pin", "Pin", ["message"]),
+                      ("send", "Send v2", ["content"])])
+    assert [tool.name for tool in tools] == ["send", "pin", "send"]
+    assert tools[0].description == "Send v1"
+    assert tools[2].description == "Send v2"
+
+
+def test_request_does_not_add_a_result_for_a_call_without_one():
+    calls = [_call("call_a", "read-file", filename="/tmp/missing"), _call("call_b", "send", content="hi")]
+    request = _request([llmToolCallMessage("assistant", calls, "[TOOL CALL]"),
+                        llmToolCallResponseMessage("tool", "call_b", "SUCCESS, RETURN: None"),
+                        llmRequestMessage("user", "next")])
+    results = _tool_results(request)
+    assert [callid for callid, _ in results] == ["call_b"]
+    assert results[0][1] == "SUCCESS, RETURN: None"
+    assert [m.role for m in request.messages] == ["system", "assistant", "tool", "user"]
+
+
+def test_request_does_not_merge_results_that_share_a_call_id():
+    calls = [_call("call_a", "metta", sexpression="(superpose (1 2 3))")]
+    request = _request([llmToolCallMessage("assistant", calls, "[TOOL CALL]"),
+                        llmToolCallResponseMessage("tool", "call_a", 'SUCCESS, RETURN: "1"'),
+                        llmToolCallResponseMessage("tool", "call_a", 'SUCCESS, RETURN: "2"'),
+                        llmToolCallResponseMessage("tool", "call_a", 'SUCCESS, RETURN: "3"'),
+                        llmRequestMessage("user", "next")])
+    results = _tool_results(request)
+    assert [callid for callid, _ in results] == ["call_a", "call_a", "call_a"]
+    assert results[0][1] == 'SUCCESS, RETURN: "1"'
+    assert results[1][1] == 'SUCCESS, RETURN: "2"'
+    assert results[2][1] == 'SUCCESS, RETURN: "3"'
+
+
 def test_request_keeps_paired_results_as_they_are():
     calls = [_call("call_a", "pin", message="x"), _call("call_b", "send", content="hi")]
     request = _request([llmToolCallMessage("assistant", calls, "[TOOL CALL]"),
@@ -114,6 +148,20 @@ def test_request_keeps_paired_results_as_they_are():
                         llmRequestMessage("user", "next")])
     assert _tool_results(request) == [("call_a", "PIN-SUCCESS"), ("call_b", "SUCCESS, RETURN: None")]
     assert [m.role for m in request.messages] == ["system", "assistant", "tool", "tool", "user"]
+
+
+def test_request_does_not_drop_an_assistant_message_without_calls():
+    request = _request([llmToolCallMessage("assistant", [], "[TOOL CALL]"),
+                        llmRequestMessage("user", "next")])
+    assert [m.role for m in request.messages] == ["system", "assistant", "user"]
+
+
+def test_request_does_not_drop_a_result_with_an_unknown_call_id():
+    request = _request([llmToolCallMessage("assistant", [_call("call_a", "pin", message="x")], "[TOOL CALL]"),
+                        llmToolCallResponseMessage("tool", "call_a", "PIN-SUCCESS"),
+                        llmToolCallResponseMessage("tool", "call_zzz", "SUCCESS, RETURN: stray"),
+                        llmRequestMessage("user", "next")])
+    assert _tool_results(request) == [("call_a", "PIN-SUCCESS"), ("call_zzz", "SUCCESS, RETURN: stray")]
 
 
 def test_request_matches_a_result_whose_call_id_is_not_a_string():
