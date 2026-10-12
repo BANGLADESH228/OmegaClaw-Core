@@ -43,6 +43,12 @@ def test_validate_response_no_tool():
                                            .with_error("Unknown tool: 'baz'"))
     assert providers._validate_response(request, response) == expected
 
+def test_validate_response_no_tool_call():
+    request = LLMRequest().add_tool(_tool('foo', 'bar'))
+    response = LLMResponse()
+    expected = LLMResponse().with_error("List of tool calls is empty")
+    assert providers._validate_response(request, response) == expected
+
 
 @NON_STRINGS
 def test_validate_response_rejects_non_string_argument(value):

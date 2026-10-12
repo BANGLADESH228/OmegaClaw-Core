@@ -194,6 +194,9 @@ class LLMResponse:
         self.error = error
         return self
 
+    def is_error(self):
+        return bool(self.error)
+
     def __repr__(self):
         return f"LLMResponse[calls={self.calls!r},error={self.error!r}]"
 
@@ -250,6 +253,9 @@ def llmProviderChat(request):
         return LLMResponse()
 
 def _validate_response(request: LLMRequest, response: LLMResponse) -> LLMResponse:
+    if not response.calls and not response.is_error():
+        return response.with_error("List of tool calls is empty")
+
     for call in response.calls:
         if call.is_error():
             continue
@@ -302,7 +308,7 @@ def llmResponseCalls(response: LLMResponse):
     return response.calls
 
 def llmResponseIsError(response: LLMResponse):
-    return bool(response.error)
+    return response.is_error()
 
 def llmResponseGetError(response: LLMResponse):
     return response.error
@@ -345,7 +351,10 @@ def llmToolCallToSExpr(call: LLMToolCall):
     return f"({call.id} {sexpr})"
 
 def llmResponseToSExpr(response: LLMResponse) -> str:
-    sexpr = "("
-    for call in response.calls:
-        sexpr = sexpr + llmToolCallToSExpr(call)
-    return sexpr + ")"
+    if response.is_error():
+        return f"(Error () \"{str(response.error).translate(ESCAPE)}\")"
+    else:
+        sexpr = "("
+        for call in response.calls:
+            sexpr = sexpr + llmToolCallToSExpr(call)
+        return sexpr + ")"
