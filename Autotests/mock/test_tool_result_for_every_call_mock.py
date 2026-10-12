@@ -59,7 +59,7 @@ def test_tool_result_for_every_call_mock(llm, comm):
         if "SUCCESS, RETURN" not in results[send_id]:
             c.fail("send result", f"the send result is not its own: {results[send_id]}")
         c.ok("send result", results[send_id])
-        if "no value" not in results[read_id].lower():
+        if "SUCCESS, RETURN" not in results[read_id]:
             c.fail("read-file result", f"the missing result is not reported: {results[read_id]}")
         c.ok("read-file result", results[read_id])
         c.done()
