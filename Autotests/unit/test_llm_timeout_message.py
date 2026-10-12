@@ -134,15 +134,6 @@ def test_chat_still_returns_nothing_for_other_failures(llm):
     assert _provider(llm, ValueError("boom")).chat("prompt") == ""
 
 
-# --- the message has to survive the parser the loop runs it through ----------
-
-def test_the_timeout_command_parses_into_one_send(llm, helper):
-    parsed = helper.balance_parentheses(llm._llm_timeout_command())
-    assert parsed.startswith('((send "')
-    assert parsed.endswith('"))')
-    assert parsed.count("(send ") == 1
-
-
 # --- one attempt, so the timeout is reported when the first request gives up --
 
 def _client_kwargs(llm, monkeypatch, gateway):

@@ -8,11 +8,6 @@ import json
 from src.logger import get_logger
 import uuid
 
-PROMPT_DELIMITER = ":-:-:-:"
-# The loop tags the human message it appends after the delimiter. Everything else
-# that can land there, the spamShield reminder or nothing at all, is not a turn of
-# its own.
-HUMAN_MESSAGE_MARKER = "HUMAN-MSG:"
 LLM_EMPTY_RESPONSE_MESSAGE = (
     "The agent didn\'t return an answer: reasoning exceeded the token limit for "
     "this response before it could produce one."
@@ -196,25 +191,6 @@ def _retrying(call, provider: str):
                 f"[{provider}.chat]: transient failure, retrying in {delay:.1f}s: {error}")
             time.sleep(delay)
 
-def _split_system_user(content: str) -> Tuple[str, str]:
-    """
-    MeTTa sends:
-        <system/context> :-:-:-: <last human/wakeup message>
-
-    Keep the split intact so providers receive a real system prompt.
-    """
-    if PROMPT_DELIMITER not in content:
-        return "", content.strip()
-
-    sysmsg, _, usermsg = content.partition(PROMPT_DELIMITER)
-    sysmsg = sysmsg.strip()
-    usermsg = usermsg.strip()
-
-    if not usermsg:
-        usermsg = "EMPTY / NO NEW USER INPUT."
-
-    return sysmsg, usermsg
-
 def _stable_cache_key(provider: str, model: str, sysmsg: str) -> str:
     """
     Stable key for requests sharing the same system-prefix family.
@@ -260,7 +236,7 @@ class AIProvider(AbstractAIProvider):
         self._client = None  # lazy initialization
         self._timeout_notice_sent = False
 
-    def _start_of_turn(self, content: str) -> None:
+    def _start_of_turn(self, request: LLMRequest) -> None:
         """A prompt carrying a human message starts a fresh turn, which deserves
         its own answer even if the previous cycle already timed out.
 
@@ -270,9 +246,10 @@ class AIProvider(AbstractAIProvider):
         straight from the prompt rather than through _split_system_user, which
         substitutes a placeholder when it is empty.
         """
-        _, delimiter, tail = content.partition(PROMPT_DELIMITER)
-        tail = (tail if delimiter else content).lstrip(" ([\"'")
-        if tail.startswith(HUMAN_MESSAGE_MARKER):
+        user = [m for m in request.messages if m.role == "user"]
+        if len(user) > 0:
+            content = user[-1].content
+        if "NO NEW USER INPUT" in content:
             self._timeout_notice_sent = False
 
     def _answered(self) -> None:
@@ -396,7 +373,7 @@ class AIProvider(AbstractAIProvider):
 
     def chat(self, request: LLMRequest) -> LLMResponse:
         """Send chat request, initializing client if needed."""
-        self._start_of_turn(content)
+        self._start_of_turn(request)
         self._ensure_client()
 
         if self._client is None:

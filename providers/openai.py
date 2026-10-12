@@ -141,7 +141,7 @@ class OpenAIProviderImpl(llm.AIProvider):
 
     def chat(self, request: LLMRequest) -> LLMResponse:
         """Send chat request, initializing client if needed."""
-        self._start_of_turn(content)
+        self._start_of_turn(request)
         self._ensure_client()
 
         if self._client is None:
