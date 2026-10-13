@@ -416,11 +416,9 @@ def test_the_notice_names_the_limit_and_both_places_that_hold_it(llm):
 # --- every chat client carries the same limits -------------------------------
 
 @pytest.fixture(scope="module")
-def openrouter(llm):
+def openrouter(llm, providers):
     """OpenRouter overrides _create_client, so it needs checking on its own."""
-    providers_stub = types.ModuleType("providers")
-    providers_stub.LLMProvider = object
-    providers_stub.registerLLMProvider = lambda name, provider: None
+    providers_stub = providers
     saved = {name: sys.modules.get(name) for name in ("providers", "lib_llm_ext", "openai", "config")}
     sys.modules["providers"] = providers_stub
     sys.modules["lib_llm_ext"] = llm
