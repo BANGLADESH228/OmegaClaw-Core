@@ -8,6 +8,7 @@ import json
 from src.logger import get_logger
 import uuid
 
+NO_HUMAN_MESSAGE_MARKER = "NO NEW USER INPUT"
 LLM_EMPTY_RESPONSE_MESSAGE = (
     "The agent didn\'t return an answer: reasoning exceeded the token limit for "
     "this response before it could produce one."
@@ -249,8 +250,8 @@ class AIProvider(AbstractAIProvider):
         user = [m for m in request.messages if m.role == "user"]
         if len(user) > 0:
             content = user[-1].content
-        if "NO NEW USER INPUT" in content:
-            self._timeout_notice_sent = False
+            if not NO_HUMAN_MESSAGE_MARKER in content:
+                self._timeout_notice_sent = False
 
     def _answered(self) -> None:
         """The provider answered, so the next timeout is a new run."""
@@ -267,9 +268,9 @@ class AIProvider(AbstractAIProvider):
         if self._timeout_notice_sent:
             logger.warning(
                 f"[{self.name}.chat]: timed out again, the user was already told")
-            return ""
+            return LLMResponse().with_error("Timeout out more than once")
         self._timeout_notice_sent = True
-        return _llm_timeout_command()
+        return LLMResponse().add_tool_call(_llm_timeout_command())
 
     def _ensure_client(self):
         """Initialize client on first use."""
